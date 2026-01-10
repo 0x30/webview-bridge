@@ -216,17 +216,18 @@ class PermissionModule(
         }
         
         // 需要请求权限
-        if (context is Activity) {
+        val activity = bridgeContext.getActivity()
+        if (activity != null) {
             permissionCallback = callback
             pendingPermissions = listOf(permissionType.permission)
             
             ActivityCompat.requestPermissions(
-                context,
+                activity,
                 arrayOf(permissionType.permission),
                 PERMISSION_REQUEST_CODE
             )
         } else {
-            callback(Result.failure(BridgeError.notSupported("需要 Activity 上下文来请求权限")))
+            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
         }
     }
     
@@ -294,7 +295,8 @@ class PermissionModule(
         }
         
         // 需要请求权限
-        if (context is Activity) {
+        val activity = bridgeContext.getActivity()
+        if (activity != null) {
             permissionCallback = { result ->
                 result.fold(
                     onSuccess = { data ->
@@ -326,12 +328,12 @@ class PermissionModule(
             pendingPermissions = permissionsToRequest
             
             ActivityCompat.requestPermissions(
-                context,
+                activity,
                 permissionsToRequest.toTypedArray(),
                 PERMISSION_REQUEST_CODE
             )
         } else {
-            callback(Result.failure(BridgeError.notSupported("需要 Activity 上下文来请求权限")))
+            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
         }
     }
     

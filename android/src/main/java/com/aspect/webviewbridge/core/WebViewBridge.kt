@@ -7,6 +7,7 @@
 package com.aspect.webviewbridge.core
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -374,6 +375,13 @@ class WebViewBridge(
     @Suppress("UNCHECKED_CAST")
     override fun <T : BridgeModule> getModule(moduleClass: Class<T>): T? {
         return modules.values.find { moduleClass.isInstance(it) } as? T
+    }
+
+    /**
+     * 获取 Activity
+     */
+    override fun getActivity(): Activity? {
+        return activityProvider()
     }
 
     /**

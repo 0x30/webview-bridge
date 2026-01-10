@@ -83,6 +83,11 @@ interface BridgeModuleContext {
      * 获取其他模块
      */
     fun <T : BridgeModule> getModule(moduleClass: Class<T>): T?
+    
+    /**
+     * 获取 Activity （用于权限请求等操作）
+     */
+    fun getActivity(): android.app.Activity?
 }
 
 /**
