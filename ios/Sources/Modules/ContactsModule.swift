@@ -48,6 +48,8 @@ public class ContactsModule: NSObject, BridgeModule {
         CNContactImageDataAvailableKey as CNKeyDescriptor,
         CNContactThumbnailImageDataKey as CNKeyDescriptor,
         CNContactImageDataKey as CNKeyDescriptor,
+        // CNContactFormatter 所需的键
+        CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
     ]
 
     // MARK: - Handle Request
@@ -196,12 +198,14 @@ public class ContactsModule: NSObject, BridgeModule {
         }
     }
 
-    // MARK: - PickContact
+    // MARK: - PickContact （已修复版本）
 
     private func pickContact(
         callback: @escaping (Result<Any?, BridgeError>) -> Void
     ) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
             guard let topVC = UIApplication.shared.topViewController else {
                 callback(
                     .failure(
@@ -215,9 +219,22 @@ public class ContactsModule: NSObject, BridgeModule {
             }
 
             self.contactPickerCallback = callback
+
             let picker = CNContactPickerViewController()
             picker.delegate = self
-            topVC.present(picker, animated: true)
+
+            // 关键修复：提前声明常用字段，降低系统返回残缺contact的概率
+            picker.displayedPropertyKeys = [
+                CNContactIdentifierKey,
+                CNContactGivenNameKey,
+                CNContactFamilyNameKey,
+                CNContactMiddleNameKey,
+                CNContactPhoneNumbersKey,
+                CNContactEmailAddressesKey,
+                CNContactThumbnailImageDataKey,
+            ]
+
+            topVC.present(picker, animated: true, completion: nil)
         }
     }
 
@@ -237,34 +254,6 @@ public class ContactsModule: NSObject, BridgeModule {
             includePhoto: true,
             callback: callback
         )
-    }
-
-    private func fetchFullContact(
-        identifier: String,
-        includePhoto: Bool,
-        callback: @escaping (Result<Any?, BridgeError>) -> Void
-    ) {
-        let store = CNContactStore()
-        do {
-            let contact = try store.unifiedContact(
-                withIdentifier: identifier,
-                keysToFetch: allContactKeysToFetch
-            )
-            callback(
-                .success(
-                    contactToDictionary(contact, includePhoto: includePhoto)
-                )
-            )
-        } catch {
-            callback(
-                .failure(
-                    BridgeError(
-                        code: .internalError,
-                        message: "获取联系人失败: \(error.localizedDescription)"
-                    )
-                )
-            )
-        }
     }
 
     // MARK: - CreateContact
@@ -335,6 +324,21 @@ public class ContactsModule: NSObject, BridgeModule {
         _ contact: CNContact,
         includePhoto: Bool = false
     ) -> [String: Any] {
+        // 安全拼接 displayName
+        let displayName: String
+        if contact.isKeyAvailable(CNContactGivenNameKey)
+            || contact.isKeyAvailable(CNContactFamilyNameKey)
+        {
+            displayName =
+                CNContactFormatter.string(from: contact, style: .fullName)
+                ?? "\(contact.givenName) \(contact.familyName)"
+                .trimmingCharacters(in: .whitespaces)
+        } else {
+            displayName = "\(contact.givenName) \(contact.familyName)"
+                .trimmingCharacters(in: .whitespaces)
+        }
+
+        // 构建字典
         var dict: [String: Any] = [
             "identifier": contact.identifier,
             "givenName": contact.givenName,
@@ -344,12 +348,10 @@ public class ContactsModule: NSObject, BridgeModule {
             "nameSuffix": contact.nameSuffix,
             "nickname": contact.nickname,
             "organization": contact.organizationName,
-            "displayName": CNContactFormatter.string(
-                from: contact,
-                style: .fullName
-            ) ?? "",
+            "displayName": displayName,
         ]
 
+        // 电话号码
         dict["phones"] = contact.phoneNumbers.map { phone in
             [
                 "label": CNLabeledValue<NSString>.localizedString(
@@ -359,6 +361,7 @@ public class ContactsModule: NSObject, BridgeModule {
             ]
         }
 
+        // 邮箱
         dict["emails"] = contact.emailAddresses.map { email in
             [
                 "label": CNLabeledValue<NSString>.localizedString(
@@ -368,6 +371,7 @@ public class ContactsModule: NSObject, BridgeModule {
             ]
         }
 
+        // 头像
         dict["hasImage"] = contact.imageDataAvailable
         if includePhoto, let imageData = contact.imageData {
             dict["imageBase64"] = imageData.base64EncodedString()
@@ -376,6 +380,34 @@ public class ContactsModule: NSObject, BridgeModule {
         }
 
         return dict
+    }
+
+    private func fetchFullContact(
+        identifier: String,
+        includePhoto: Bool,
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        let store = CNContactStore()
+        do {
+            let contact = try store.unifiedContact(
+                withIdentifier: identifier,
+                keysToFetch: allContactKeysToFetch
+            )
+            callback(
+                .success(
+                    contactToDictionary(contact, includePhoto: includePhoto)
+                )
+            )
+        } catch {
+            callback(
+                .failure(
+                    BridgeError(
+                        code: .internalError,
+                        message: "获取联系人失败: \(error.localizedDescription)"
+                    )
+                )
+            )
+        }
     }
 }
 
@@ -387,12 +419,21 @@ extension ContactsModule: CNContactPickerDelegate {
         _ picker: CNContactPickerViewController,
         didSelect contact: CNContact
     ) {
-        // 重新 fetch 联系人，使用统一 keysToFetch
-        fetchFullContact(identifier: contact.identifier, includePhoto: true) {
-            result in
-            self.contactPickerCallback?(result)
-            self.contactPickerCallback = nil
-        }
+        // 关键安全做法：只取 identifier，什么都不要碰！
+        let safeIdentifier = contact.identifier
+
+        // 尽早关闭 picker，提升体验
+        picker.dismiss(animated: true, completion: nil)
+
+        // 重新完整获取
+        fetchFullContact(
+            identifier: safeIdentifier,
+            includePhoto: true,
+            callback: { [weak self] result in
+                self?.contactPickerCallback?(result)
+                self?.contactPickerCallback = nil
+            }
+        )
     }
 
     public func contactPickerDidCancel(_ picker: CNContactPickerViewController)
