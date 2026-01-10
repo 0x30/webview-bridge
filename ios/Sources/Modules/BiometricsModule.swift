@@ -10,21 +10,21 @@ import LocalAuthentication
 // MARK: - Biometrics 模块
 
 public class BiometricsModule: BridgeModule {
-    
+
     public let moduleName = "Biometrics"
     public let methods = [
         "IsAvailable",
         "GetBiometryType",
         "Authenticate",
-        "CheckEnrollment"
+        "CheckEnrollment",
     ]
-    
+
     private weak var bridge: WebViewBridge?
-    
+
     public init(bridge: WebViewBridge) {
         self.bridge = bridge
     }
-    
+
     public func handleRequest(
         method: String,
         params: [String: AnyCodable],
@@ -40,52 +40,66 @@ public class BiometricsModule: BridgeModule {
         case "CheckEnrollment":
             checkEnrollment(callback: callback)
         default:
-            callback(.failure(BridgeError.methodNotFound("\(moduleName).\(method)")))
+            callback(
+                .failure(BridgeError.methodNotFound("\(moduleName).\(method)"))
+            )
         }
     }
-    
+
     // MARK: - IsAvailable
-    
+
     /// 检查生物识别是否可用
-    private func isAvailable(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
+    private func isAvailable(
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
         let context = LAContext()
         var error: NSError?
-        
-        let canEvaluate = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        
+
+        let canEvaluate = context.canEvaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            error: &error
+        )
+
         var result: [String: Any] = [
             "isAvailable": canEvaluate,
-            "biometryType": biometryTypeString(context.biometryType)
+            "biometryType": biometryTypeString(context.biometryType),
         ]
-        
+
         if let error = error {
             result["errorCode"] = error.code
-            result["errorMessage"] = errorMessage(for: LAError.Code(rawValue: error.code))
+            result["errorMessage"] = errorMessage(
+                for: LAError.Code(rawValue: error.code)
+            )
         }
-        
+
         callback(.success(result))
     }
-    
+
     // MARK: - GetBiometryType
-    
+
     /// 获取生物识别类型
-    private func getBiometryType(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
+    private func getBiometryType(
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
         let context = LAContext()
         var error: NSError?
-        
+
         // 需要先评估才能获取正确的 biometryType
-        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        
+        _ = context.canEvaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            error: &error
+        )
+
         let result: [String: Any] = [
             "type": biometryTypeString(context.biometryType),
-            "displayName": biometryDisplayName(context.biometryType)
+            "displayName": biometryDisplayName(context.biometryType),
         ]
-        
+
         callback(.success(result))
     }
-    
+
     // MARK: - Authenticate
-    
+
     /// 进行生物识别认证
     private func authenticate(
         params: [String: AnyCodable],
@@ -94,50 +108,65 @@ public class BiometricsModule: BridgeModule {
         let reason = params["reason"]?.stringValue ?? "请验证您的身份"
         let fallbackTitle = params["fallbackTitle"]?.stringValue
         let cancelTitle = params["cancelTitle"]?.stringValue
-        let allowDeviceCredential = params["allowDeviceCredential"]?.boolValue ?? false
-        
+        let allowDeviceCredential =
+            params["allowDeviceCredential"]?.boolValue ?? false
+
         let context = LAContext()
-        
+
         // 配置上下文
         if let fallbackTitle = fallbackTitle {
             context.localizedFallbackTitle = fallbackTitle
         }
-        
+
         if let cancelTitle = cancelTitle {
             context.localizedCancelTitle = cancelTitle
         }
-        
+
         // 选择认证策略
-        let policy: LAPolicy = allowDeviceCredential
+        let policy: LAPolicy =
+            allowDeviceCredential
             ? .deviceOwnerAuthentication
             : .deviceOwnerAuthenticationWithBiometrics
-        
+
         var error: NSError?
         guard context.canEvaluatePolicy(policy, error: &error) else {
-            let laError = LAError.Code(rawValue: error?.code ?? LAError.biometryNotAvailable.rawValue)
-            callback(.failure(BridgeError(
-                code: .featureDisabled,
-                message: errorMessage(for: laError)
-            )))
+            let laError = LAError.Code(
+                rawValue: error?.code ?? LAError.biometryNotAvailable.rawValue
+            )
+            callback(
+                .failure(
+                    BridgeError(
+                        code: .featureDisabled,
+                        message: errorMessage(for: laError)
+                    )
+                )
+            )
             return
         }
-        
-        context.evaluatePolicy(policy, localizedReason: reason) { success, authError in
+
+        context.evaluatePolicy(policy, localizedReason: reason) {
+            success,
+            authError in
             DispatchQueue.main.async {
                 if success {
-                    callback(.success([
-                        "success": true,
-                        "biometryType": self.biometryTypeString(context.biometryType)
-                    ]))
+                    callback(
+                        .success([
+                            "success": true,
+                            "biometryType": self.biometryTypeString(
+                                context.biometryType
+                            ),
+                        ])
+                    )
                 } else {
-                    let laError = (authError as? LAError)?.code ?? .authenticationFailed
-                    
+                    let laError =
+                        (authError as? LAError)?.code ?? .authenticationFailed
+
                     var result: [String: Any] = [
                         "success": false,
                         "errorCode": laError.rawValue,
-                        "errorMessage": self.errorMessage(for: laError)
+                        "errorMessage": self.errorMessage(for: laError),
                     ]
-                    
+
                     // 提供更多错误详情
                     switch laError {
                     case .userCancel:
@@ -153,30 +182,35 @@ public class BiometricsModule: BridgeModule {
                     default:
                         result["reason"] = "failed"
                     }
-                    
+
                     callback(.success(result))
                 }
             }
         }
     }
-    
+
     // MARK: - CheckEnrollment
-    
+
     /// 检查生物识别是否已注册
-    private func checkEnrollment(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
+    private func checkEnrollment(
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
         let context = LAContext()
         var error: NSError?
-        
-        let canEvaluate = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-        
+
+        let canEvaluate = context.canEvaluatePolicy(
+            .deviceOwnerAuthenticationWithBiometrics,
+            error: &error
+        )
+
         var result: [String: Any] = [
             "isEnrolled": canEvaluate,
-            "biometryType": biometryTypeString(context.biometryType)
+            "biometryType": biometryTypeString(context.biometryType),
         ]
-        
+
         if let error = error {
             let laError = LAError.Code(rawValue: error.code)
-            
+
             switch laError {
             case .biometryNotEnrolled:
                 result["isEnrolled"] = false
@@ -191,12 +225,12 @@ public class BiometricsModule: BridgeModule {
                 result["reason"] = "unknown"
             }
         }
-        
+
         callback(.success(result))
     }
-    
+
     // MARK: - 辅助方法
-    
+
     private func biometryTypeString(_ type: LABiometryType) -> String {
         switch type {
         case .none:
@@ -209,7 +243,7 @@ public class BiometricsModule: BridgeModule {
             return "unknown"
         }
     }
-    
+
     private func biometryDisplayName(_ type: LABiometryType) -> String {
         switch type {
         case .none:
@@ -222,10 +256,10 @@ public class BiometricsModule: BridgeModule {
             return "未知"
         }
     }
-    
+
     private func errorMessage(for code: LAError.Code?) -> String {
         guard let code = code else { return "未知错误" }
-        
+
         switch code {
         case .authenticationFailed:
             return "认证失败"
@@ -249,8 +283,10 @@ public class BiometricsModule: BridgeModule {
             return "无效的上下文"
         case .notInteractive:
             return "需要用户交互"
-        case .watchNotAvailable:
-            return "Apple Watch 不可用"
+        #if os(watchOS)
+            case .watchNotAvailable:
+                return "Apple Watch 不可用"
+        #endif
         @unknown default:
             return "未知错误"
         }

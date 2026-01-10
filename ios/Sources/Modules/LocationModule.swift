@@ -6,6 +6,7 @@
 
 import Foundation
 import CoreLocation
+import UIKit
 
 // MARK: - Location 模块
 
