@@ -1,0 +1,35 @@
+# ===== Android Studio / IntelliJ =====
+.idea/
+*.iml
+
+# ===== Gradle =====
+.gradle/
+build/
+**/build/
+
+# ===== Local config =====
+local.properties
+
+# ===== NDK / CMake =====
+.externalNativeBuild/
+.cxx/
+
+# ===== Logs =====
+*.log
+
+
+gradle/
+
+# ===== APK / AAB =====
+*.apk
+*.aab
+
+# ===== Keystore（千万别提交）=====
+*.jks
+*.keystore
+
+# ===== Firebase =====
+google-services.json
+
+# ===== Kotlin =====
+.kotlin/

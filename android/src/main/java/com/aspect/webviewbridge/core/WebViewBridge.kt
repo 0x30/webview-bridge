@@ -16,6 +16,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.fragment.app.FragmentActivity
 import androidx.webkit.WebViewAssetLoader
 import com.aspect.webviewbridge.modules.*
 import com.aspect.webviewbridge.protocol.*
@@ -51,13 +52,13 @@ data class BridgeConfiguration(
     companion object {
         /** 默认配置 */
         val DEFAULT = BridgeConfiguration()
-        
+
         /** 开发调试配置（允许 HTTP 加载） */
         val DEVELOPMENT = BridgeConfiguration(
             debug = true,
             allowsHTTPLoading = true
         )
-        
+
         /** 带自定义 Scheme 的配置 */
         fun withURLScheme(scheme: URLSchemeConfiguration) = BridgeConfiguration(
             urlScheme = scheme
@@ -73,26 +74,27 @@ data class BridgeConfiguration(
 class WebViewBridge(
     private val context: Context,
     private val webView: WebView,
-    private val configuration: BridgeConfiguration = BridgeConfiguration.DEFAULT
+    private val configuration: BridgeConfiguration = BridgeConfiguration.DEFAULT,
+    private val activityProvider: () -> FragmentActivity? = { null }
 ) : BridgeModuleContext {
-    
+
     companion object {
         private const val TAG = "WebViewBridge"
         private const val PROTOCOL_VERSION = "1.0"
     }
-    
+
     private val gson = Gson()
     private val mainHandler = Handler(Looper.getMainLooper())
-    
+
     // 模块注册表
     private val modules = mutableMapOf<String, BridgeModule>()
-    
+
     // 资源加载器
     private var assetLoader: WebViewAssetLoader? = null
-    
+
     // 启动参数
     private var launchParams: Map<String, Any> = emptyMap()
-    
+
     init {
         setupWebView()
         if (configuration.urlScheme != null) {
@@ -100,7 +102,7 @@ class WebViewBridge(
         }
         registerBuiltInModules()
     }
-    
+
     /**
      * 配置 WebView
      */
@@ -111,36 +113,36 @@ class WebViewBridge(
             domStorageEnabled = true
             allowFileAccess = false
             allowContentAccess = false
-            
+
             // 开发模式允许混合内容
             if (configuration.allowsHTTPLoading) {
                 mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
         }
-        
+
         // 添加 JavaScript 接口
         webView.addJavascriptInterface(BridgeJSInterface(), configuration.jsInterfaceName)
-        
+
         // 设置 WebViewClient 处理资源请求
         webView.webViewClient = BridgeWebViewClient()
-        
+
         if (configuration.debug) {
             WebView.setWebContentsDebuggingEnabled(true)
         }
     }
-    
+
     /**
      * 设置资源加载器
      */
     private fun setupAssetLoader() {
         val urlScheme = configuration.urlScheme ?: return
-        
+
         assetLoader = WebViewAssetLoader.Builder()
             .setDomain(urlScheme.host)
             .addPathHandler("/", WebViewAssetLoader.AssetsPathHandler(context))
             .build()
     }
-    
+
     /**
      * 注册内置模块
      */
@@ -153,8 +155,14 @@ class WebViewBridge(
         registerModule(StatusBarModule(context, this))
         registerModule(SystemModule(context, this))
         registerModule(StorageModule(context, this))
+        registerModule(BiometricsModule(context, this, activityProvider))
+        registerModule(ContactsModule(context, this))
+        registerModule(LocationModule(context, this))
+        registerModule(MediaModule(context, this))
+        registerModule(NetworkModule(context, this))
+        registerModule(NFCModule(context, this, activityProvider))
     }
-    
+
     /**
      * 注册模块
      */
@@ -164,7 +172,7 @@ class WebViewBridge(
             Log.d(TAG, "模块已注册: ${module.moduleName}")
         }
     }
-    
+
     /**
      * 注销模块
      */
@@ -175,19 +183,19 @@ class WebViewBridge(
             }
         }
     }
-    
+
     /**
      * 设置启动参数
      */
     fun setLaunchParams(params: Map<String, Any>) {
         this.launchParams = params
     }
-    
+
     /**
      * 获取启动参数
      */
     fun getLaunchParams(): Map<String, Any> = launchParams
-    
+
     /**
      * 加载本地 HTML 文件（使用自定义 URL Scheme）
      *
@@ -214,7 +222,7 @@ class WebViewBridge(
             }
         }
     }
-    
+
     /**
      * 加载远程 URL（用于开发调试）
      *
@@ -230,40 +238,40 @@ class WebViewBridge(
             Log.d(TAG, "加载远程 URL: $url")
         }
     }
-    
+
     /**
      * 重新加载当前页面
      */
     fun reload() {
         webView.reload()
     }
-    
+
     /**
      * 处理请求
      */
     private fun handleRequest(requestJson: String) {
         try {
             val request = gson.fromJson(requestJson, BridgeRequest::class.java)
-            
+
             // 验证协议版本
             if (request.version != PROTOCOL_VERSION) {
                 sendError(request.callbackId, BridgeError(BridgeErrorCode.INVALID_VERSION))
                 return
             }
-            
+
             // 查找模块
             val module = modules[request.moduleName]
             if (module == null) {
                 sendError(request.callbackId, BridgeError.moduleNotFound(request.moduleName))
                 return
             }
-            
+
             // 验证方法
             if (!module.methods.contains(request.methodName)) {
                 sendError(request.callbackId, BridgeError.methodNotFound(request.type))
                 return
             }
-            
+
             // 调用模块处理
             module.handleRequest(request.methodName, request) { result ->
                 result.fold(
@@ -273,12 +281,15 @@ class WebViewBridge(
                     onFailure = { error ->
                         when (error) {
                             is BridgeError -> sendError(request.callbackId, error)
-                            else -> sendError(request.callbackId, BridgeError.internalError(error.message))
+                            else -> sendError(
+                                request.callbackId,
+                                BridgeError.internalError(error.message)
+                            )
                         }
                     }
                 )
             }
-            
+
         } catch (e: JsonSyntaxException) {
             Log.e(TAG, "请求解析失败: $requestJson", e)
             sendError(null, BridgeError.parseError(e.message))
@@ -287,7 +298,7 @@ class WebViewBridge(
             sendError(null, BridgeError.internalError(e.message))
         }
     }
-    
+
     /**
      * 发送成功响应
      */
@@ -295,7 +306,7 @@ class WebViewBridge(
         val response = BridgeResponse.success(callbackId, data)
         sendResponse(response)
     }
-    
+
     /**
      * 发送错误响应
      */
@@ -303,7 +314,7 @@ class WebViewBridge(
         val response = BridgeResponse.error(callbackId, error)
         sendResponse(response)
     }
-    
+
     /**
      * 发送响应到 Web 端
      */
@@ -312,7 +323,7 @@ class WebViewBridge(
         val js = "window.__bridgeReceiveResponse__('$json')"
         evaluateJavaScript(js)
     }
-    
+
     /**
      * 发送事件到 Web 端
      */
@@ -322,7 +333,7 @@ class WebViewBridge(
         val js = "window.__bridgeReceiveEvent__('$json')"
         evaluateJavaScript(js)
     }
-    
+
     /**
      * 获取模块
      */
@@ -330,7 +341,7 @@ class WebViewBridge(
     override fun <T : BridgeModule> getModule(moduleClass: Class<T>): T? {
         return modules.values.find { moduleClass.isInstance(it) } as? T
     }
-    
+
     /**
      * 执行 JavaScript
      */
@@ -339,7 +350,7 @@ class WebViewBridge(
             webView.evaluateJavascript(js, null)
         }
     }
-    
+
     /**
      * 生命周期方法 - onResume
      */
@@ -351,7 +362,7 @@ class WebViewBridge(
         }
         sendEvent("foreground", null)
     }
-    
+
     /**
      * 生命周期方法 - onPause
      */
@@ -363,7 +374,7 @@ class WebViewBridge(
         }
         sendEvent("background", null)
     }
-    
+
     /**
      * 生命周期方法 - onDestroy
      */
@@ -375,45 +386,46 @@ class WebViewBridge(
         }
         modules.clear()
     }
-    
+
     /**
      * JavaScript 接口
      */
     private inner class BridgeJSInterface {
-        
+
         @JavascriptInterface
         fun postMessage(message: String) {
             handleRequest(message)
         }
     }
-    
+
     /**
      * WebView Client - 处理资源拦截
      */
     private inner class BridgeWebViewClient : WebViewClient() {
-        
+
         override fun shouldInterceptRequest(
             view: WebView?,
             request: WebResourceRequest?
         ): WebResourceResponse? {
             request?.url?.let { uri ->
                 val urlScheme = configuration.urlScheme
-                
+
                 // 处理自定义 scheme
-                if (urlScheme != null && 
-                    uri.scheme == urlScheme.scheme && 
-                    uri.host == urlScheme.host) {
+                if (urlScheme != null &&
+                    uri.scheme == urlScheme.scheme &&
+                    uri.host == urlScheme.host
+                ) {
                     val path = uri.path?.removePrefix("/") ?: ""
                     return loadAsset(path)
                 }
-                
+
                 // 使用 AssetLoader 处理
                 assetLoader?.shouldInterceptRequest(uri)?.let { return it }
             }
-            
+
             return super.shouldInterceptRequest(view, request)
         }
-        
+
         private fun loadAsset(path: String): WebResourceResponse? {
             return try {
                 val inputStream = context.assets.open(path)
@@ -434,7 +446,7 @@ class WebViewBridge(
                 )
             }
         }
-        
+
         private fun getMimeType(path: String): String {
             return when {
                 path.endsWith(".html") -> "text/html"

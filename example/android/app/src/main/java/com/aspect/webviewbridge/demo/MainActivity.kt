@@ -95,10 +95,10 @@ class MainActivity : AppCompatActivity() {
     private fun loadContent() {
         // 方式一：加载本地 HTML 文件
         // 将 example/www/index.html 复制到 app/src/main/assets/www/ 目录
-        bridge.loadLocalHtml("www/index.html")
+//        bridge.loadLocalHtml("www/index.html")
         
         // 方式二：加载远程 URL（调试用）
-        // webView.loadUrl("https://example.com")
+         webView.loadUrl("http://localhost:5173")
     }
     
     // ==================== 生命周期 ====================

@@ -13,19 +13,14 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.aspect.webviewbridge.core.BridgeError
-import com.aspect.webviewbridge.core.BridgeErrorCode
-import com.aspect.webviewbridge.core.BridgeModule
-import com.aspect.webviewbridge.core.WebViewBridge
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import kotlin.coroutines.resume
+import com.aspect.webviewbridge.protocol.BridgeError
+import com.aspect.webviewbridge.protocol.BridgeModule
+import com.aspect.webviewbridge.protocol.BridgeModuleContext
+import com.aspect.webviewbridge.protocol.BridgeRequest
 
 class BiometricsModule(
     private val context: Context,
-    private val bridge: WebViewBridge,
+    private val bridgeContext: BridgeModuleContext,
     private val activityProvider: () -> FragmentActivity?
 ) : BridgeModule {
 
@@ -42,39 +37,40 @@ class BiometricsModule(
         BiometricManager.from(context)
     }
 
-    override suspend fun handleRequest(
+    override fun handleRequest(
         method: String,
-        params: JSONObject
-    ): Any? {
-        return when (method) {
-            "IsAvailable" -> isAvailable()
-            "GetBiometryType" -> getBiometryType()
-            "Authenticate" -> authenticate(params)
-            "CheckEnrollment" -> checkEnrollment()
-            else -> throw BridgeError(BridgeErrorCode.MethodNotFound, "$moduleName.$method")
+        request: BridgeRequest,
+        callback: (Result<Any?>) -> Unit
+    ) {
+        when (method) {
+            "IsAvailable" -> isAvailable(callback)
+            "GetBiometryType" -> getBiometryType(callback)
+            "Authenticate" -> authenticate(request, callback)
+            "CheckEnrollment" -> checkEnrollment(callback)
+            else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
     }
 
     // MARK: - IsAvailable
 
-    private fun isAvailable(): Map<String, Any> {
+    private fun isAvailable(callback: (Result<Any?>) -> Unit) {
         val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
         val canAuthenticateWeak = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
         
         val isAvailable = canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS ||
                          canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS
         
-        return mapOf(
+        callback(Result.success(mapOf(
             "isAvailable" to isAvailable,
             "biometryType" to getBiometryTypeString(),
             "strongBiometrics" to (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS),
             "weakBiometrics" to (canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS)
-        )
+        )))
     }
 
     // MARK: - GetBiometryType
 
-    private fun getBiometryType(): Map<String, Any> {
+    private fun getBiometryType(callback: (Result<Any?>) -> Unit) {
         val type = getBiometryTypeString()
         val displayName = when (type) {
             "fingerprint" -> "指纹识别"
@@ -84,61 +80,59 @@ class BiometricsModule(
             else -> "无"
         }
 
-        return mapOf(
+        callback(Result.success(mapOf(
             "type" to type,
             "displayName" to displayName
-        )
+        )))
     }
 
     // MARK: - Authenticate
 
-    private suspend fun authenticate(params: JSONObject): Map<String, Any> {
+    private fun authenticate(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
         val activity = activityProvider()
-            ?: throw BridgeError(BridgeErrorCode.InternalError, "无法获取 Activity")
+        if (activity == null) {
+            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
+            return
+        }
 
-        val title = params.optString("title", "生物识别认证")
-        val subtitle = params.optString("subtitle", "")
-        val description = params.optString("reason", "请验证您的身份")
-        val negativeButtonText = params.optString("cancelTitle", "取消")
-        val allowDeviceCredential = params.optBoolean("allowDeviceCredential", false)
+        val title = request.getString("title") ?: "生物识别认证"
+        val subtitle = request.getString("subtitle") ?: ""
+        val description = request.getString("reason") ?: "请验证您的身份"
+        val negativeButtonText = request.getString("cancelTitle") ?: "取消"
+        val allowDeviceCredential = request.getBool("allowDeviceCredential") ?: false
 
-        return withContext(Dispatchers.Main) {
-            suspendCancellableCoroutine { continuation ->
-                val callback = object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                        val result = mapOf(
-                            "success" to false,
-                            "errorCode" to errorCode,
-                            "errorMessage" to errString.toString(),
-                            "reason" to errorReasonString(errorCode)
-                        )
-                        if (continuation.isActive) {
-                            continuation.resume(result)
-                        }
-                    }
-
-                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        val successResult = mapOf(
-                            "success" to true,
-                            "biometryType" to getBiometryTypeString(),
-                            "authenticationType" to when (result.authenticationType) {
-                                BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC -> "biometric"
-                                BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL -> "deviceCredential"
-                                else -> "unknown"
-                            }
-                        )
-                        if (continuation.isActive) {
-                            continuation.resume(successResult)
-                        }
-                    }
-
-                    override fun onAuthenticationFailed() {
-                        // 认证失败但还可以重试，不需要返回结果
-                    }
+        activity.runOnUiThread {
+            val authCallback = object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    val result = mapOf(
+                        "success" to false,
+                        "errorCode" to errorCode,
+                        "errorMessage" to errString.toString(),
+                        "reason" to errorReasonString(errorCode)
+                    )
+                    callback(Result.success(result))
                 }
 
-                val executor = ContextCompat.getMainExecutor(context)
-                val biometricPrompt = BiometricPrompt(activity, executor, callback)
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    val successResult = mapOf(
+                        "success" to true,
+                        "biometryType" to getBiometryTypeString(),
+                        "authenticationType" to when (result.authenticationType) {
+                            BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC -> "biometric"
+                            BiometricPrompt.AUTHENTICATION_RESULT_TYPE_DEVICE_CREDENTIAL -> "deviceCredential"
+                            else -> "unknown"
+                        }
+                    )
+                    callback(Result.success(successResult))
+                }
+
+                override fun onAuthenticationFailed() {
+                    // 认证失败但还可以重试，不需要返回结果
+                }
+            }
+
+            val executor = ContextCompat.getMainExecutor(context)
+            val biometricPrompt = BiometricPrompt(activity, executor, authCallback)
 
                 val promptInfoBuilder = BiometricPrompt.PromptInfo.Builder()
                     .setTitle(title)
@@ -158,19 +152,14 @@ class BiometricsModule(
                     promptInfoBuilder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 }
 
-                val promptInfo = promptInfoBuilder.build()
-                biometricPrompt.authenticate(promptInfo)
-
-                continuation.invokeOnCancellation {
-                    biometricPrompt.cancelAuthentication()
-                }
-            }
+            val promptInfo = promptInfoBuilder.build()
+            biometricPrompt.authenticate(promptInfo)
         }
     }
 
     // MARK: - CheckEnrollment
 
-    private fun checkEnrollment(): Map<String, Any> {
+    private fun checkEnrollment(callback: (Result<Any?>) -> Unit) {
         val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
         
         val isEnrolled = canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS
@@ -186,11 +175,11 @@ class BiometricsModule(
             else -> "unknown"
         }
 
-        return mapOf(
+        callback(Result.success(mapOf(
             "isEnrolled" to isEnrolled,
             "biometryType" to getBiometryTypeString(),
             "reason" to reason
-        )
+        )))
     }
 
     // MARK: - 辅助方法

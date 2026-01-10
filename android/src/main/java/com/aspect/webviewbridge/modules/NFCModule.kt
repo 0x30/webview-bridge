@@ -19,22 +19,20 @@ import android.nfc.tech.Ndef
 import android.nfc.tech.NdefFormatable
 import android.os.Build
 import android.provider.Settings
-import com.aspect.webviewbridge.core.BridgeError
-import com.aspect.webviewbridge.core.BridgeErrorCode
-import com.aspect.webviewbridge.core.BridgeEvent
-import com.aspect.webviewbridge.core.BridgeModule
-import com.aspect.webviewbridge.core.WebViewBridge
+import com.aspect.webviewbridge.protocol.BridgeError
+import com.aspect.webviewbridge.protocol.BridgeModule
+import com.aspect.webviewbridge.protocol.BridgeModuleContext
+import com.aspect.webviewbridge.protocol.BridgeRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import org.json.JSONObject
 import java.nio.charset.Charset
 import java.util.Locale
 
 class NFCModule(
     private val context: Context,
-    private val bridge: WebViewBridge,
+    private val bridgeContext: BridgeModuleContext,
     private val activityProvider: () -> Activity?
 ) : BridgeModule {
 
@@ -58,18 +56,19 @@ class NFCModule(
     private var pendingWriteMessage: NdefMessage? = null
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    override suspend fun handleRequest(
+    override fun handleRequest(
         method: String,
-        params: JSONObject
-    ): Any? {
-        return when (method) {
-            "IsAvailable" -> isAvailable()
-            "IsEnabled" -> isEnabled()
-            "StartScan" -> startScan(params)
-            "StopScan" -> stopScan()
-            "WriteTag" -> writeTag(params)
-            "OpenSettings" -> openSettings()
-            else -> throw BridgeError(BridgeErrorCode.MethodNotFound, "$moduleName.$method")
+        request: BridgeRequest,
+        callback: (Result<Any?>) -> Unit
+    ) {
+        when (method) {
+            "IsAvailable" -> isAvailable(callback)
+            "IsEnabled" -> isEnabled(callback)
+            "StartScan" -> startScan(request, callback)
+            "StopScan" -> stopScan(callback)
+            "WriteTag" -> writeTag(request, callback)
+            "OpenSettings" -> openSettings(callback)
+            else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
     }
 
@@ -276,7 +275,7 @@ class NFCModule(
                     val records = parseNdefMessage(message)
 
                     scope.launch {
-                        bridge.sendEvent(BridgeEvent("NFC.TagDetected", mapOf(
+                        bridgeContext.sendEvent("NFC.TagDetected", mapOf(
                             "records" to records,
                             "capacity" to ndef.maxSize,
                             "isWritable" to ndef.isWritable
@@ -285,7 +284,7 @@ class NFCModule(
                 }
             } catch (e: Exception) {
                 scope.launch {
-                    bridge.sendEvent(BridgeEvent("NFC.Error", mapOf(
+                    bridgeContext.sendEvent("NFC.Error", mapOf(
                         "error" to (e.message ?: "读取失败")
                     )))
                 }
@@ -312,9 +311,9 @@ class NFCModule(
                 }
 
                 scope.launch {
-                    bridge.sendEvent(BridgeEvent("NFC.TagDetected", mapOf(
+                    bridgeContext.sendEvent("NFC.TagDetected", mapOf(
                         "records" to allRecords
-                    )))
+                    ))
                 }
             }
         }
@@ -343,10 +342,10 @@ class NFCModule(
                 ndef.writeNdefMessage(message)
 
                 scope.launch {
-                    bridge.sendEvent(BridgeEvent("NFC.WriteSuccess", mapOf(
+                    bridgeContext.sendEvent("NFC.WriteSuccess", mapOf(
                         "success" to true,
                         "capacity" to ndef.maxSize
-                    )))
+                    ))
                 }
 
                 // 写入成功后重置状态
@@ -371,7 +370,7 @@ class NFCModule(
                     formatable.format(message)
 
                     scope.launch {
-                        bridge.sendEvent(BridgeEvent("NFC.WriteSuccess", mapOf(
+                        bridgeContext.sendEvent("NFC.WriteSuccess", mapOf(
                             "success" to true,
                             "formatted" to true
                         )))
@@ -397,7 +396,7 @@ class NFCModule(
 
     private fun sendWriteError(message: String) {
         scope.launch {
-            bridge.sendEvent(BridgeEvent("NFC.WriteError", mapOf(
+            bridgeContext.sendEvent("NFC.WriteError", mapOf(
                 "success" to false,
                 "error" to message
             )))

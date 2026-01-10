@@ -21,23 +21,19 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.core.content.ContextCompat
-import com.aspect.webviewbridge.core.BridgeError
-import com.aspect.webviewbridge.core.BridgeErrorCode
-import com.aspect.webviewbridge.core.BridgeEvent
-import com.aspect.webviewbridge.core.BridgeModule
-import com.aspect.webviewbridge.core.WebViewBridge
+import com.aspect.webviewbridge.protocol.BridgeError
+import com.aspect.webviewbridge.protocol.BridgeModule
+import com.aspect.webviewbridge.protocol.BridgeModuleContext
+import com.aspect.webviewbridge.protocol.BridgeRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import java.util.Locale
 import kotlin.coroutines.resume
 
 class LocationModule(
     private val context: Context,
-    private val bridge: WebViewBridge
+    private val bridgeContext: BridgeModuleContext
 ) : BridgeModule {
 
     override val moduleName: String = "Location"
@@ -62,21 +58,22 @@ class LocationModule(
     private var watchIdCounter = 0
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    override suspend fun handleRequest(
+    override fun handleRequest(
         method: String,
-        params: JSONObject
-    ): Any? {
-        return when (method) {
-            "GetCurrentPosition" -> getCurrentPosition(params)
-            "WatchPosition" -> watchPosition(params)
-            "ClearWatch" -> clearWatch(params)
-            "HasPermission" -> hasPermission()
-            "RequestPermission" -> requestPermission(params)
-            "GetPermissionStatus" -> getPermissionStatus()
-            "OpenSettings" -> openSettings()
-            "Geocode" -> geocode(params)
-            "ReverseGeocode" -> reverseGeocode(params)
-            else -> throw BridgeError(BridgeErrorCode.MethodNotFound, "$moduleName.$method")
+        request: BridgeRequest,
+        callback: (Result<Any?>) -> Unit
+    ) {
+        when (method) {
+            "GetCurrentPosition" -> getCurrentPosition(request, callback)
+            "WatchPosition" -> watchPosition(request, callback)
+            "ClearWatch" -> clearWatch(request, callback)
+            "HasPermission" -> hasPermission(callback)
+            "RequestPermission" -> requestPermission(request, callback)
+            "GetPermissionStatus" -> getPermissionStatus(callback)
+            "OpenSettings" -> openSettings(callback)
+            "Geocode" -> geocode(request, callback)
+            "ReverseGeocode" -> reverseGeocode(request, callback)
+            else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
     }
 
@@ -227,7 +224,7 @@ class LocationModule(
                 result["watchId"] = watchId
                 
                 scope.launch {
-                    bridge.sendEvent(BridgeEvent("Location.PositionChanged", result))
+                    bridgeContext.sendEvent("Location.PositionChanged", result)
                 }
             }
 

@@ -13,19 +13,17 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import android.telephony.TelephonyManager
-import com.aspect.webviewbridge.core.BridgeError
-import com.aspect.webviewbridge.core.BridgeErrorCode
-import com.aspect.webviewbridge.core.BridgeEvent
-import com.aspect.webviewbridge.core.BridgeModule
-import com.aspect.webviewbridge.core.WebViewBridge
+import com.aspect.webviewbridge.protocol.BridgeError
+import com.aspect.webviewbridge.protocol.BridgeModule
+import com.aspect.webviewbridge.protocol.BridgeModuleContext
+import com.aspect.webviewbridge.protocol.BridgeRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 class NetworkModule(
     private val context: Context,
-    private val bridge: WebViewBridge
+    private val bridgeContext: BridgeModuleContext
 ) : BridgeModule {
 
     override val moduleName: String = "Network"
@@ -44,15 +42,16 @@ class NetworkModule(
     private var isMonitoring = false
     private val scope = CoroutineScope(Dispatchers.Main)
 
-    override suspend fun handleRequest(
+    override fun handleRequest(
         method: String,
-        params: JSONObject
-    ): Any? {
-        return when (method) {
-            "GetStatus" -> getStatus()
-            "StartMonitoring" -> startMonitoring()
-            "StopMonitoring" -> stopMonitoring()
-            else -> throw BridgeError(BridgeErrorCode.MethodNotFound, "$moduleName.$method")
+        request: BridgeRequest,
+        callback: (Result<Any?>) -> Unit
+    ) {
+        when (method) {
+            "GetStatus" -> getStatus(callback)
+            "StartMonitoring" -> startMonitoring(callback)
+            "StopMonitoring" -> stopMonitoring(callback)
+            else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
     }
 
@@ -206,7 +205,7 @@ class NetworkModule(
     private fun sendNetworkStatus() {
         scope.launch {
             val status = getCurrentNetworkStatus()
-            bridge.sendEvent(BridgeEvent("Network.StatusChanged", status))
+            bridgeContext.sendEvent("Network.StatusChanged", status)
         }
     }
 
