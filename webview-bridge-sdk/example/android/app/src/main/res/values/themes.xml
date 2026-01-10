@@ -1,0 +1,23 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 应用主题 - 继承 Material3 -->
+    <style name="Theme.WebViewBridgeDemo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 主色调 -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryDark">@color/primary_dark</item>
+        <item name="colorAccent">@color/accent</item>
+        
+        <!-- 状态栏 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        
+        <!-- 沉浸式布局 -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+        <item name="android:fitsSystemWindows">false</item>
+    </style>
+    
+    <!-- 启动画面主题 -->
+    <style name="Theme.WebViewBridgeDemo.Splash" parent="Theme.WebViewBridgeDemo">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
+</resources>

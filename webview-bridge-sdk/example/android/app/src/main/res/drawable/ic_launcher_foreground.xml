@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
+    android:tint="#FFFFFF">
+    
+    <!-- Bridge Icon -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M54,24
+            L54,34
+            M54,74
+            L54,84
+            M30,54
+            L40,54
+            M68,54
+            L78,54
+            M54,44
+            C60,44 66,48 66,54
+            C66,60 60,64 54,64
+            C48,64 42,60 42,54
+            C42,48 48,44 54,44
+            Z"
+        android:strokeWidth="4"
+        android:strokeColor="@android:color/white" />
+    
+</vector>

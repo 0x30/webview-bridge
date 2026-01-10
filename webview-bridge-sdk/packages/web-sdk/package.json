@@ -1,0 +1,44 @@
+{
+  "name": "@aspect/webview-bridge",
+  "version": "1.0.0",
+  "description": "跨平台 WebView Bridge SDK - Web 端",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./modules/*": {
+      "import": "./src/modules/*.ts",
+      "types": "./src/modules/*.ts"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.5",
+    "rollup": "^4.6.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {},
+  "keywords": [
+    "webview",
+    "bridge",
+    "sdk",
+    "ios",
+    "android",
+    "hybrid"
+  ],
+  "author": "Aspect",
+  "license": "MIT"
+}
