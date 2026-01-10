@@ -354,7 +354,7 @@ class WebViewBridge(
      */
     private fun sendResponse(response: BridgeResponse) {
         val json = response.toJson().escapeForJs()
-        val js = "window.__bridgeReceiveResponse__('$json')"
+        val js = "window.__bridgeCallback && window.__bridgeCallback('$json')"
         evaluateJavaScript(js)
     }
 
@@ -364,7 +364,7 @@ class WebViewBridge(
     override fun sendEvent(eventName: String, data: Any?) {
         val event = BridgeEvent(eventName, data)
         val json = event.toJson().escapeForJs()
-        val js = "window.__bridgeReceiveEvent__('$json')"
+        val js = "window.__bridgeEvent && window.__bridgeEvent('$json')"
         evaluateJavaScript(js)
     }
 
