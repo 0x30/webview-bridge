@@ -115,9 +115,9 @@ export default defineComponent({
       }
 
       try {
-        await Bridge.clipboard.set({
+        await Bridge.clipboard.write({
           type: 'text',
-          text: 'Hello from WebView Bridge!',
+          content: 'Hello from WebView Bridge!',
         })
         emit('log', 'success', '已复制到剪贴板')
         showToast({ type: 'success', message: '已复制' })
@@ -136,9 +136,9 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.clipboard.get('text')
-        emit('log', 'success', `剪贴板内容: ${result.text || '(空)'}`)
-        showToast(`剪贴板: ${result.text || '(空)'}`)
+        const result = await Bridge.clipboard.read('text')
+        emit('log', 'success', `剪贴板内容: ${result.content || '(空)'}`)
+        showToast(`剪贴板: ${result.content || '(空)'}`)
       } catch (error) {
         emit('log', 'error', `读取失败: ${error}`)
       }
