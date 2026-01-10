@@ -6,8 +6,11 @@ export default defineConfig({
   
   lang: 'zh-CN',
   
+  // GitHub Pages 配置
+  base: process.env.GITHUB_PAGES ? '/webview-bridge/' : '/',
+  
   head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', href: `${process.env.GITHUB_PAGES ? '/webview-bridge' : ''}/favicon.ico` }],
   ],
 
   themeConfig: {

@@ -513,6 +513,36 @@ webview-bridge-sdk/
         └── index.html
 ```
 
+## 📚 文档
+
+完整文档托管在 GitHub Pages，使用 VitePress 构建。
+
+### 本地查看文档
+
+```bash
+cd docs-site
+pnpm install
+pnpm run dev
+```
+
+访问 `http://localhost:5173` 查看文档。
+
+### 在线文档
+
+文档会自动部署到 GitHub Pages：
+- 📖 [完整文档](https://aspect.github.io/webview-bridge/)
+
+### 部署流程
+
+使用 GitHub Actions 自动构建和部署：
+
+1. 推送到 `main` 分支时，自动触发构建
+2. VitePress 生成静态文件到 `.vitepress/dist`
+3. 上传到 `gh-pages` 分支
+4. GitHub Pages 自动部署
+
+详见 [GitHub Pages 部署指南](./docs-site/GITHUB_PAGES.md)。
+
 ## 许可证
 
 MIT License

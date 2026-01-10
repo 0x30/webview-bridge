@@ -12,11 +12,11 @@ ehthumbs.db
 Thumbs.db
 
 # ==========================
-# 2. Node / Web / TS
+# 2. Node / Web / TS / Vite
 # ==========================
 # Node modules
 node_modules/
-# pnpm / yarn / npm
+# pnpm / yarn / npm logs
 .pnpm-debug.log
 .pnpm-store/
 yarn.lock
@@ -35,9 +35,13 @@ out/
 # ==========================
 # 3. iOS / Swift
 # ==========================
-# Build / Derived data
-build/
-DerivedData/
+# 构建输出
+**/DerivedData/
+**/build/
+**/.swiftpm/
+**/Pods/
+**/Package.resolved
+# Xcode 临时文件
 *.xcworkspace
 *.xcodeproj/project.xcworkspace/
 *.xcodeproj/xcuserdata/
@@ -46,12 +50,6 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
-# Swift Package Manager
-.swiftpm/
-Package.resolved
-# CocoaPods
-Pods/
-Podfile.lock
 # fastlane
 fastlane/report.xml
 fastlane/Preview.html
@@ -61,29 +59,44 @@ fastlane/test_output
 # ==========================
 # 4. Android / Kotlin / Gradle
 # ==========================
-.gradle/
-build/
-captures/
-.externalNativeBuild/
-local.properties
+# 构建输出
+**/.gradle/
+**/build/
+**/captures/
+**/.externalNativeBuild/
+**/local.properties
+# IDE 文件
 *.iml
 .idea/
-*.kotlin_module
-# Gradle wrapper exception (keep jar)
+# Kotlin模块缓存
+**/*.kotlin_module
+# Gradle wrapper exception (保留 jar)
 !gradle/wrapper/gradle-wrapper.jar
 
 # ==========================
-# 5. Editors / IDE / Misc
+# 5. Example / packages / docs-site
+# ==========================
+# Node modules
+**/node_modules/
+# 构建输出
+**/dist/
+**/.vite/
+# TypeScript / Vite / Rollup cache
+*.tsbuildinfo
+*.log
+
+# ==========================
+# 6. Editors / Misc
 # ==========================
 # VSCode / JetBrains
 .vscode/
 .idea/
 *.iml
-# Editor backups
+# 编辑器备份
 *~
 *.swp
 *.swo
 *.tmp
-# Coverage / test output
+# 测试覆盖率 / 输出
 coverage/
 .nyc_output/
