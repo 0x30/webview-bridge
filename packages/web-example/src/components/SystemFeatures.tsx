@@ -1,12 +1,12 @@
 import { defineComponent, ref } from 'vue'
-import { Button, Field, Dialog, Toast, showToast } from 'vant'
+import { Button, Field, CellGroup, showToast, Divider } from 'vant'
 import { Bridge } from '@aspect/webview-bridge'
 
 export default defineComponent({
   name: 'SystemFeatures',
   emits: ['log'],
   setup(_, { emit }) {
-    const urlDialogVisible = ref(false)
+    const showUrlForm = ref(false)
     const urlInput = ref('https://www.apple.com')
 
     /**
@@ -78,7 +78,7 @@ export default defineComponent({
       try {
         await Bridge.system.openURL(url)
         emit('log', 'success', `已打开: ${url}`)
-        urlDialogVisible.value = false
+        showUrlForm.value = false
       } catch (error) {
         emit('log', 'error', `打开 URL 失败: ${error}`)
       }
@@ -120,7 +120,7 @@ export default defineComponent({
           text: 'Hello from WebView Bridge!',
         })
         emit('log', 'success', '已复制到剪贴板')
-        Toast.success('已复制')
+        showToast({ type: 'success', message: '已复制' })
       } catch (error) {
         emit('log', 'error', `复制失败: ${error}`)
       }
@@ -174,15 +174,39 @@ export default defineComponent({
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <Button
               size="small"
-              onClick={() => (urlDialogVisible.value = true)}
+              type={showUrlForm.value ? 'default' : 'primary'}
+              onClick={() => (showUrlForm.value = !showUrlForm.value)}
             >
-              打开 URL
+              {showUrlForm.value ? '取消' : '打开 URL'}
             </Button>
             <Button size="small" onClick={share}>
               分享
             </Button>
           </div>
         </div>
+
+        {/* 打开 URL 表单 */}
+        {showUrlForm.value && (
+          <div style={{ marginBottom: '12px' }}>
+            <Divider>输入 URL</Divider>
+            <CellGroup inset>
+              <Field
+                v-model={urlInput.value}
+                label="URL"
+                placeholder="请输入要打开的网址"
+                type="url"
+              />
+            </CellGroup>
+            <Button
+              type="primary"
+              block
+              onClick={openUrl}
+              style={{ margin: '12px 16px' }}
+            >
+              打开
+            </Button>
+          </div>
+        )}
 
         {/* 剪贴板 */}
         <div>
@@ -198,20 +222,6 @@ export default defineComponent({
             </Button>
           </div>
         </div>
-
-        {/* URL 输入对话框 */}
-        <Dialog
-          v-model:show={urlDialogVisible.value}
-          title="打开 URL"
-          show-cancel-button
-          onConfirm={openUrl}
-        >
-          <Field
-            v-model={urlInput.value}
-            placeholder="请输入 URL"
-            style={{ padding: '16px' }}
-          />
-        </Dialog>
       </div>
     )
   },

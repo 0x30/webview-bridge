@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { Button, Tag, Image as VanImage, ActionSheet, showToast, showImagePreview } from 'vant'
+import { Button, Tag, Image as VanImage, showToast, showImagePreview } from 'vant'
 import { Bridge, type MediaResult, type Album } from '@aspect/webview-bridge'
 
 export default defineComponent({
@@ -10,14 +10,6 @@ export default defineComponent({
     const photos = ref<MediaResult[]>([])
     const albums = ref<Album[]>([])
     const hasPermission = ref({ camera: false, photos: false })
-
-    const showActionSheet = ref(false)
-    const actionSheetActions = [
-      { name: '拍照', value: 'takePhoto' },
-      { name: '录像', value: 'recordVideo' },
-      { name: '从相册选择', value: 'pickImage' },
-      { name: '选择视频', value: 'pickVideo' },
-    ]
 
     /**
      * 检查权限
@@ -67,11 +59,9 @@ export default defineComponent({
     }
 
     /**
-     * 处理 ActionSheet 选择
+     * 拍照
      */
-    async function handleAction(action: { value: string }) {
-      showActionSheet.value = false
-
+    async function takePhoto() {
       if (!Bridge.isNative) {
         emit('log', 'error', '仅在 Native 环境可用')
         return
@@ -79,68 +69,113 @@ export default defineComponent({
 
       loading.value = true
       try {
-        let mediaResult: MediaResult | null = null
-
-        switch (action.value) {
-          case 'takePhoto': {
-            const takeResult = await Bridge.media.takePhoto({
-              quality: 0.8,
-            })
-            if ('cancelled' in takeResult && takeResult.cancelled) {
-              emit('log', 'info', '操作已取消')
-              return
-            }
-            if ('base64' in takeResult) {
-              mediaResult = takeResult
-            }
-            break
-          }
-          case 'recordVideo': {
-            const recordResult = await Bridge.media.recordVideo({
-              maxDuration: 30,
-              quality: 'high',
-            })
-            if ('cancelled' in recordResult && recordResult.cancelled) {
-              emit('log', 'info', '操作已取消')
-              return
-            }
-            if ('base64' in recordResult) {
-              mediaResult = recordResult
-            }
-            break
-          }
-          case 'pickImage': {
-            const imageResult = await Bridge.media.pickImage()
-            if ('cancelled' in imageResult && imageResult.cancelled) {
-              emit('log', 'info', '操作已取消')
-              return
-            }
-            if ('items' in imageResult && imageResult.items.length > 0) {
-              mediaResult = imageResult.items[0] ?? null
-            } else if ('base64' in imageResult) {
-              mediaResult = imageResult
-            }
-            break
-          }
-          case 'pickVideo': {
-            const videoResult = await Bridge.media.pickVideo()
-            if ('cancelled' in videoResult && videoResult.cancelled) {
-              emit('log', 'info', '操作已取消')
-              return
-            }
-            if ('base64' in videoResult) {
-              mediaResult = videoResult
-            }
-            break
-          }
+        const result = await Bridge.media.takePhoto({
+          quality: 0.8,
+        })
+        if ('cancelled' in result && result.cancelled) {
+          emit('log', 'info', '操作已取消')
+          return
         }
-
-        if (mediaResult) {
-          photos.value = [mediaResult, ...photos.value]
-          emit('log', 'success', `获取到媒体: ${mediaResult.mimeType}`)
+        if ('base64' in result) {
+          photos.value.unshift(result)
+          emit('log', 'success', '拍照成功')
         }
       } catch (error) {
-        emit('log', 'error', `操作失败: ${error}`)
+        emit('log', 'error', `拍照失败: ${error}`)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 录像
+     */
+    async function recordVideo() {
+      if (!Bridge.isNative) {
+        emit('log', 'error', '仅在 Native 环境可用')
+        return
+      }
+
+      loading.value = true
+      try {
+        const result = await Bridge.media.recordVideo({
+          maxDuration: 30,
+          quality: 'high',
+        })
+        if ('cancelled' in result && result.cancelled) {
+          emit('log', 'info', '操作已取消')
+          return
+        }
+        if ('base64' in result) {
+          photos.value.unshift(result)
+          emit('log', 'success', '录像成功')
+        }
+      } catch (error) {
+        emit('log', 'error', `录像失败: ${error}`)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 从相册选择图片
+     */
+    async function pickImage() {
+      if (!Bridge.isNative) {
+        emit('log', 'error', '仅在 Native 环境可用')
+        return
+      }
+
+      loading.value = true
+      try {
+        const result = await Bridge.media.pickImage()
+        if ('cancelled' in result && result.cancelled) {
+          emit('log', 'info', '操作已取消')
+          return
+        }
+        // pickImage 可能返回 MultiMediaResult (多个) 或 MediaResult (单个)
+        if ('items' in result) {
+          // 多个项目
+          const items = (result as { items: MediaResult[] }).items
+          if (items.length > 0) {
+            // 添加所有项目
+            photos.value = [...items, ...photos.value]
+            emit('log', 'success', `获取到 ${items.length} 张图片`)
+          }
+        } else if ('base64' in result) {
+          // 单个项目
+          photos.value.unshift(result as MediaResult)
+          emit('log', 'success', '获取到 1 张图片')
+        }
+      } catch (error) {
+        emit('log', 'error', `选择图片失败: ${error}`)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    /**
+     * 选择视频
+     */
+    async function pickVideo() {
+      if (!Bridge.isNative) {
+        emit('log', 'error', '仅在 Native 环境可用')
+        return
+      }
+
+      loading.value = true
+      try {
+        const result = await Bridge.media.pickVideo()
+        if ('cancelled' in result && result.cancelled) {
+          emit('log', 'info', '操作已取消')
+          return
+        }
+        if ('base64' in result) {
+          photos.value.unshift(result)
+          emit('log', 'success', `获取到视频: ${result.mimeType}`)
+        }
+      } catch (error) {
+        emit('log', 'error', `选择视频失败: ${error}`)
       } finally {
         loading.value = false
       }
@@ -220,20 +255,43 @@ export default defineComponent({
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button
             type="primary"
-            style={{ flex: 1 }}
+            size="small"
             loading={loading.value}
-            onClick={() => (showActionSheet.value = true)}
+            onClick={takePhoto}
           >
-            拍照/选择
+            拍照
           </Button>
           <Button
-            style={{ flex: 1 }}
+            size="small"
             loading={loading.value}
-            onClick={fetchAlbums}
+            onClick={recordVideo}
           >
-            获取相册
+            录像
+          </Button>
+          <Button
+            size="small"
+            loading={loading.value}
+            onClick={pickImage}
+          >
+            选择图片
+          </Button>
+          <Button
+            size="small"
+            loading={loading.value}
+            onClick={pickVideo}
+          >
+            选择视频
           </Button>
         </div>
+
+        <Button
+          block
+          style={{ marginTop: '8px' }}
+          loading={loading.value}
+          onClick={fetchAlbums}
+        >
+          获取相册列表
+        </Button>
 
         {/* 已选择的媒体 */}
         {photos.value.length > 0 && (
@@ -291,14 +349,6 @@ export default defineComponent({
             ))}
           </div>
         )}
-
-        {/* ActionSheet */}
-        <ActionSheet
-          v-model:show={showActionSheet.value}
-          actions={actionSheetActions}
-          onSelect={handleAction}
-          cancel-text="取消"
-        />
       </div>
     )
   },

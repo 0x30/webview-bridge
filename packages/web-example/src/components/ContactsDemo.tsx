@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { Button, Tag, CellGroup, Cell, Field, Dialog, showToast } from 'vant'
+import { Button, Tag, CellGroup, Cell, Field, showToast, Divider } from 'vant'
 import { Bridge, type Contact } from '@aspect/webview-bridge'
 
 export default defineComponent({
@@ -11,8 +11,8 @@ export default defineComponent({
     const selectedContact = ref<Contact | null>(null)
     const hasPermission = ref(false)
 
-    // 新建联系人表单
-    const showCreateDialog = ref(false)
+    // 新建联系人表单显示状态
+    const showCreateForm = ref(false)
     const newContact = ref({
       givenName: '',
       familyName: '',
@@ -92,11 +92,15 @@ export default defineComponent({
 
       try {
         const result = await Bridge.contacts.pickContact()
-        if ('cancelled' in result && result.cancelled) {
+        // 检查是否取消
+        if ('cancelled' in result && (result as any).cancelled) {
           emit('log', 'info', '取消选择')
-        } else if ('displayName' in result) {
-          selectedContact.value = result
-          emit('log', 'success', `选择了: ${result.displayName}`)
+          return
+        }
+        // 检查是否有 displayName（表示是有效联系人）
+        if ('displayName' in result || 'identifier' in result) {
+          selectedContact.value = result as Contact
+          emit('log', 'success', `选择了: ${(result as any).displayName || '联系人'}`)
         }
       } catch (error) {
         emit('log', 'error', `选择联系人失败: ${error}`)
@@ -130,14 +134,14 @@ export default defineComponent({
             : undefined,
         })
 
-        showCreateDialog.value = false
         emit('log', 'success', `联系人创建成功, ID: ${result.identifier}`)
 
-        // 清空表单
+        // 清空表单并隐藏
         newContact.value = { givenName: '', familyName: '', phoneNumber: '', email: '' }
+        showCreateForm.value = false
 
         // 刷新列表
-        fetchContacts()
+        await fetchContacts()
       } catch (error) {
         emit('log', 'error', `创建联系人失败: ${error}`)
       } finally {
@@ -175,10 +179,55 @@ export default defineComponent({
           <Button style={{ flex: 1 }} onClick={pickContact}>
             选择联系人
           </Button>
-          <Button style={{ flex: 1 }} onClick={() => (showCreateDialog.value = true)}>
-            新建联系人
+          <Button 
+            style={{ flex: 1 }} 
+            type={showCreateForm.value ? 'default' : 'primary'}
+            onClick={() => (showCreateForm.value = !showCreateForm.value)}
+          >
+            {showCreateForm.value ? '取消新建' : '新建联系人'}
           </Button>
         </div>
+
+        {/* 新建联系人表单 */}
+        {showCreateForm.value && (
+          <div style={{ marginTop: '12px' }}>
+            <Divider>新建联系人</Divider>
+            <CellGroup inset>
+              <Field
+                v-model={newContact.value.givenName}
+                label="名字"
+                placeholder="请输入名字"
+                required
+              />
+              <Field
+                v-model={newContact.value.familyName}
+                label="姓氏"
+                placeholder="请输入姓氏"
+              />
+              <Field
+                v-model={newContact.value.phoneNumber}
+                label="电话"
+                type="tel"
+                placeholder="请输入电话"
+              />
+              <Field
+                v-model={newContact.value.email}
+                label="邮箱"
+                type="email"
+                placeholder="请输入邮箱"
+              />
+            </CellGroup>
+            <Button
+              type="primary"
+              block
+              loading={loading.value}
+              onClick={createContact}
+              style={{ margin: '12px 16px' }}
+            >
+              创建联系人
+            </Button>
+          </div>
+        )}
 
         {selectedContact.value && (
           <div class="info-card" style={{ marginTop: '12px' }}>
@@ -209,39 +258,6 @@ export default defineComponent({
             )}
           </CellGroup>
         )}
-
-        {/* 新建联系人对话框 */}
-        <Dialog
-          v-model:show={showCreateDialog.value}
-          title="新建联系人"
-          showCancelButton
-          onConfirm={createContact}
-        >
-          <CellGroup inset>
-            <Field
-              v-model={newContact.value.givenName}
-              label="名字"
-              placeholder="请输入名字"
-            />
-            <Field
-              v-model={newContact.value.familyName}
-              label="姓氏"
-              placeholder="请输入姓氏"
-            />
-            <Field
-              v-model={newContact.value.phoneNumber}
-              label="电话"
-              type="tel"
-              placeholder="请输入电话"
-            />
-            <Field
-              v-model={newContact.value.email}
-              label="邮箱"
-              type="email"
-              placeholder="请输入邮箱"
-            />
-          </CellGroup>
-        </Dialog>
       </div>
     )
   },

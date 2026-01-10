@@ -9,6 +9,7 @@ import UIKit
 import AVFoundation
 import Photos
 import PhotosUI
+import UniformTypeIdentifiers
 
 // MARK: - Media 模块
 
@@ -204,7 +205,7 @@ public class MediaModule: NSObject, BridgeModule {
             
             let picker = UIImagePickerController()
             picker.sourceType = .camera
-            picker.mediaTypes = ["public.movie"]
+            picker.mediaTypes = [UTType.movie.identifier]
             picker.delegate = self
             
             // 视频设置
@@ -291,11 +292,11 @@ public class MediaModule: NSObject, BridgeModule {
                 let mediaType = params["mediaType"]?.stringValue ?? "any"
                 switch mediaType {
                 case "image":
-                    picker.mediaTypes = ["public.image"]
+                    picker.mediaTypes = [UTType.image.identifier]
                 case "video":
-                    picker.mediaTypes = ["public.movie"]
+                    picker.mediaTypes = [UTType.movie.identifier]
                 default:
-                    picker.mediaTypes = ["public.image", "public.movie"]
+                    picker.mediaTypes = [UTType.image.identifier, UTType.movie.identifier]
                 }
                 
                 topVC.present(picker, animated: true)
@@ -550,8 +551,8 @@ extension MediaModule: PHPickerViewControllerDelegate {
                     }
                     group.leave()
                 }
-            } else if result.itemProvider.hasItemConformingToTypeIdentifier("public.movie") {
-                result.itemProvider.loadFileRepresentation(forTypeIdentifier: "public.movie") { url, error in
+            } else if result.itemProvider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
+                result.itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.movie.identifier) { url, error in
                     if let url = url, let data = try? Data(contentsOf: url) {
                         mediaItems.append([
                             "base64": data.base64EncodedString(),

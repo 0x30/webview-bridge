@@ -149,13 +149,10 @@ export default defineComponent({
 
     return () => (
       <ConfigProvider theme={colorScheme.value}>
-        <div class="page-container">
-          {/* 状态栏占位 */}
-          <div
-            class="status-bar-placeholder"
-            style={{ height: 'var(--safe-area-top)' }}
-          />
-
+        <div class="page-container" style={{ 
+          paddingTop: 'env(safe-area-inset-top)', 
+          paddingBottom: 'env(safe-area-inset-bottom)' 
+        }}>
           {/* 导航栏 */}
           <NavBar title="WebView Bridge 示例" />
 

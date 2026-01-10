@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { Button, Tag, Dialog, Field, CellGroup } from 'vant'
+import { Button, Tag, Field, CellGroup, Divider } from 'vant'
 import { Bridge, type BiometryType, type AuthenticateResult } from '@aspect/webview-bridge'
 
 export default defineComponent({
@@ -14,7 +14,7 @@ export default defineComponent({
     const lastResult = ref<AuthenticateResult | null>(null)
 
     // 认证选项
-    const showAuthDialog = ref(false)
+    const showAuthForm = ref(false)
     const authReason = ref('请验证您的身份以继续操作')
 
     /**
@@ -77,7 +77,6 @@ export default defineComponent({
         return
       }
 
-      showAuthDialog.value = false
       loading.value = true
 
       try {
@@ -92,6 +91,7 @@ export default defineComponent({
 
         if (result.success) {
           emit('log', 'success', '认证成功 ✓')
+          showAuthForm.value = false
         } else {
           emit('log', 'warning', `认证失败: ${result.reason || result.errorMessage}`)
         }
@@ -160,10 +160,40 @@ export default defineComponent({
           <Button style={{ flex: 1 }} onClick={checkEnrollment}>
             检查注册状态
           </Button>
-          <Button style={{ flex: 1 }} onClick={() => (showAuthDialog.value = true)}>
-            自定义认证
+          <Button 
+            style={{ flex: 1 }} 
+            type={showAuthForm.value ? 'default' : 'primary'}
+            onClick={() => (showAuthForm.value = !showAuthForm.value)}
+          >
+            {showAuthForm.value ? '取消自定义' : '自定义认证'}
           </Button>
         </div>
+
+        {/* 自定义认证表单 */}
+        {showAuthForm.value && (
+          <div style={{ marginBottom: '12px' }}>
+            <Divider>自定义认证参数</Divider>
+            <CellGroup inset>
+              <Field
+                v-model={authReason.value}
+                label="认证原因"
+                placeholder="请输入认证原因"
+                rows={2}
+                autosize
+                type="textarea"
+              />
+            </CellGroup>
+            <Button
+              type="primary"
+              block
+              loading={loading.value}
+              onClick={authenticate}
+              style={{ margin: '12px 16px' }}
+            >
+              开始认证
+            </Button>
+          </div>
+        )}
 
         <Button
           type="success"
@@ -217,24 +247,6 @@ export default defineComponent({
             )}
           </div>
         )}
-
-        {/* 自定义认证对话框 */}
-        <Dialog
-          v-model:show={showAuthDialog.value}
-          title="自定义认证"
-          showCancelButton
-          onConfirm={authenticate}
-        >
-          <CellGroup inset>
-            <Field
-              v-model={authReason.value}
-              label="认证原因"
-              placeholder="请输入认证提示语"
-              type="textarea"
-              rows={2}
-            />
-          </CellGroup>
-        </Dialog>
       </div>
     )
   },
