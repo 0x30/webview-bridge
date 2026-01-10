@@ -271,7 +271,7 @@ class LocationModule(
         }
 
         watchListeners[watchId] = listener
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val request = LocationRequest.Builder(interval)
                 .setMinUpdateDistanceMeters(distanceFilter)
                 .build()
