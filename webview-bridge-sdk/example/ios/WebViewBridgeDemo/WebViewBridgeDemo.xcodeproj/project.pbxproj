@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BE0ED6852F128CF5008ECA81 /* WebViewBridge in Frameworks */ = {isa = PBXBuildFile; productRef = BE0ED6842F128CF5008ECA81 /* WebViewBridge */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		BE0ED6512F128768008ECA81 /* WebViewBridgeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WebViewBridgeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BE0ED6852F128CF5008ECA81 /* WebViewBridge in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = WebViewBridgeDemo;
 			packageProductDependencies = (
+				BE0ED6842F128CF5008ECA81 /* WebViewBridge */,
 			);
 			productName = WebViewBridgeDemo;
 			productReference = BE0ED6512F128768008ECA81 /* WebViewBridgeDemo.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = BE0ED6482F128768008ECA81;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BE0ED6832F128CF5008ECA81 /* XCLocalSwiftPackageReference "../../../ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BE0ED6522F128768008ECA81 /* Products */;
 			projectDirPath = "";
@@ -345,6 +354,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		BE0ED6832F128CF5008ECA81 /* XCLocalSwiftPackageReference "../../../ios" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../../ios;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BE0ED6842F128CF5008ECA81 /* WebViewBridge */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WebViewBridge;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BE0ED6492F128768008ECA81 /* Project object */;
 }
