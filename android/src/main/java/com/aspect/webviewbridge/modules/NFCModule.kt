@@ -77,19 +77,27 @@ class NFCModule(
 
     private fun isAvailable(callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
-        callback(Result.success(mapOf(
-            "isAvailable" to (adapter != null),
-            "ndefSupported" to (adapter != null),
-            "tagSupported" to (adapter != null)
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "isAvailable" to (adapter != null),
+                    "ndefSupported" to (adapter != null),
+                    "tagSupported" to (adapter != null)
+                )
+            )
+        )
     }
 
     // MARK: - IsEnabled
 
     private fun isEnabled(callback: (Result<Any?>) -> Unit) {
-        callback(Result.success(mapOf(
-            "isEnabled" to (nfcAdapter?.isEnabled == true)
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "isEnabled" to (nfcAdapter?.isEnabled == true)
+                )
+            )
+        )
     }
 
     // MARK: - StartScan
@@ -97,12 +105,12 @@ class NFCModule(
     private fun startScan(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
         if (adapter == null) {
-            callback(Result.failure(BridgeError.featureDisabled("NFC 不可用")))
+            callback(Result.failure(BridgeError.notSupported("NFC 不可用")))
             return
         }
 
         if (!adapter.isEnabled) {
-            callback(Result.failure(BridgeError.featureDisabled("NFC 未开启")))
+            callback(Result.failure(BridgeError.notSupported("NFC 未开启")))
             return
         }
 
@@ -117,10 +125,14 @@ class NFCModule(
 
         enableForegroundDispatch(activity)
 
-        callback(Result.success(mapOf(
-            "scanning" to true,
-            "message" to "NFC 扫描已启动"
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "scanning" to true,
+                    "message" to "NFC 扫描已启动"
+                )
+            )
+        )
     }
 
     // MARK: - StopScan
@@ -146,12 +158,12 @@ class NFCModule(
     private fun writeTag(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
         if (adapter == null) {
-            callback(Result.failure(BridgeError.featureDisabled("NFC 不可用")))
+            callback(Result.failure(BridgeError.notSupported("NFC 不可用")))
             return
         }
 
         if (!adapter.isEnabled) {
-            callback(Result.failure(BridgeError.featureDisabled("NFC 未开启")))
+            callback(Result.failure(BridgeError.notSupported("NFC 未开启")))
             return
         }
 
@@ -185,10 +197,14 @@ class NFCModule(
 
         enableForegroundDispatch(activity)
 
-        callback(Result.success(mapOf(
-            "ready" to true,
-            "message" to "请将设备靠近 NFC 标签以写入"
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "ready" to true,
+                    "message" to "请将设备靠近 NFC 标签以写入"
+                )
+            )
+        )
     }
 
     // MARK: - OpenSettings
@@ -523,6 +539,16 @@ class NFCModule(
      * 清理资源
      */
     fun cleanup() {
-        stopScan()
+        isScanning = false
+        isWriteMode = false
+        pendingWriteMessage = null
+        // 清理时不需要callback，直接停止扫描
+        activityProvider()?.let { activity ->
+            try {
+                nfcAdapter?.disableForegroundDispatch(activity)
+            } catch (e: Exception) {
+                // 忽略
+            }
+        }
     }
 }

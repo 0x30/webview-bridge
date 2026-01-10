@@ -16,6 +16,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationRequest
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -173,7 +174,7 @@ class LocationModule(
         }
 
         val accuracy = request.getString("accuracy") ?: "high"
-        val timeout = request.getLong("timeout") ?: 30000
+        val timeout = request.getInt("timeout")?.toLong() ?: 30000L
 
         scope.launch {
             try {
@@ -238,7 +239,7 @@ class LocationModule(
 
         val accuracy = request.getString("accuracy") ?: "high"
         val distanceFilter = request.getDouble("distanceFilter")?.toFloat() ?: 10.0f
-        val interval = request.getLong("interval") ?: 5000
+        val interval = request.getInt("interval")?.toLong() ?: 5000L
 
         val provider = when (accuracy) {
             "high" -> {
@@ -270,7 +271,19 @@ class LocationModule(
         }
 
         watchListeners[watchId] = listener
-        locationManager.requestLocationUpdates(provider, interval, distanceFilter, listener)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val request = LocationRequest.Builder(interval)
+                .setMinUpdateDistanceMeters(distanceFilter)
+                .build()
+            locationManager.requestLocationUpdates(
+                provider,
+                request,
+                ContextCompat.getMainExecutor(context),
+                listener
+            )
+        } else {
+            locationManager.requestLocationUpdates(provider, interval, distanceFilter, listener)
+        }
 
         callback(Result.success(mapOf("watchId" to watchId)))
     }

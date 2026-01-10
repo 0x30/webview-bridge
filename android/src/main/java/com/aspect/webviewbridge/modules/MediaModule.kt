@@ -122,7 +122,7 @@ class MediaModule(
         callback: (Result<Any?>) -> Unit
     ) {
         val type = request.getString("type") ?: "storage"
-        val activity = bridgeContext.activity
+        val activity = activityProvider()
         
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
@@ -166,7 +166,7 @@ class MediaModule(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
     ) {
-        val activity = bridgeContext.activity
+        val activity = activityProvider()
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
             return
@@ -207,7 +207,7 @@ class MediaModule(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
     ) {
-        val activity = bridgeContext.activity
+        val activity = activityProvider()
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
             return
@@ -243,7 +243,7 @@ class MediaModule(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
     ) {
-        val activity = bridgeContext.activity
+        val activity = activityProvider()
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
             return
@@ -278,7 +278,7 @@ class MediaModule(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
     ) {
-        val activity = bridgeContext.activity
+        val activity = activityProvider()
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
             return
@@ -308,7 +308,7 @@ class MediaModule(
             "image" -> pickImage(request, callback)
             "video" -> pickVideo(request, callback)
             else -> {
-                val activity = bridgeContext.activity
+                val activity = activityProvider()
                 if (activity == null) {
                     callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
                     return

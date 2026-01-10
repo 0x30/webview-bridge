@@ -216,6 +216,14 @@ class NetworkModule(
      * 清理资源
      */
     fun cleanup() {
-        stopMonitoring()
+        networkCallback?.let {
+            try {
+                connectivityManager.unregisterNetworkCallback(it)
+            } catch (e: Exception) {
+                // 忽略
+            }
+        }
+        networkCallback = null
+        isMonitoring = false
     }
 }
