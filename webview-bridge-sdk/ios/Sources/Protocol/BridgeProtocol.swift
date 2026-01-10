@@ -24,13 +24,13 @@ public struct BridgeRequest: Codable {
     public let params: [String: AnyCodable]
     /// 唯一回调 ID
     public let callbackId: String
-    
+
     /// 解析模块名
     public var moduleName: String {
         let parts = type.split(separator: ".")
         return parts.count >= 1 ? String(parts[0]) : ""
     }
-    
+
     /// 解析方法名
     public var methodName: String {
         let parts = type.split(separator: ".")
@@ -50,16 +50,23 @@ public struct BridgeResponse: Codable {
     public let msg: String
     /// 响应数据
     public let data: AnyCodable?
-    
-    public init(callbackId: String, code: Int, msg: String, data: AnyCodable? = nil) {
+
+    public init(
+        callbackId: String,
+        code: Int,
+        msg: String,
+        data: AnyCodable? = nil
+    ) {
         self.callbackId = callbackId
         self.code = code
         self.msg = msg
         self.data = data
     }
-    
+
     /// 创建成功响应
-    public static func success(callbackId: String, data: Any? = nil) -> BridgeResponse {
+    public static func success(callbackId: String, data: Any? = nil)
+        -> BridgeResponse
+    {
         return BridgeResponse(
             callbackId: callbackId,
             code: BridgeErrorCode.success.rawValue,
@@ -67,9 +74,13 @@ public struct BridgeResponse: Codable {
             data: data.map { AnyCodable($0) }
         )
     }
-    
+
     /// 创建错误响应
-    public static func error(callbackId: String, code: BridgeErrorCode, msg: String) -> BridgeResponse {
+    public static func error(
+        callbackId: String,
+        code: BridgeErrorCode,
+        msg: String
+    ) -> BridgeResponse {
         return BridgeResponse(
             callbackId: callbackId,
             code: code.rawValue,
@@ -87,7 +98,7 @@ public struct BridgeEvent: Codable {
     public let event: String
     /// 事件数据
     public let data: AnyCodable?
-    
+
     public init(event: String, data: Any? = nil) {
         self.event = event
         self.data = data.map { AnyCodable($0) }
@@ -100,31 +111,31 @@ public struct BridgeEvent: Codable {
 public enum BridgeErrorCode: Int {
     // 成功
     case success = 0
-    
+
     // 1xxx: 协议错误
     case invalidJson = 1001
     case missingRequiredField = 1002
     case invalidVersion = 1003
     case invalidTypeFormat = 1004
     case invalidParams = 1005
-    
+
     // 2xxx: 能力错误
     case moduleNotFound = 2001
     case methodNotFound = 2002
     case capabilityNotSupported = 2003
-    
+
     // 3xxx: 权限错误
     case permissionDenied = 3001
     case permissionNotDetermined = 3002
     case permissionRestricted = 3003
     case permissionRequired = 3004
-    
+
     // 4xxx: 设备/系统限制
     case deviceNotSupported = 4001
     case osVersionTooLow = 4002
     case systemRestriction = 4003
     case featureDisabled = 4004
-    
+
     // 5xxx: 内部异常
     case internalError = 5001
     case timeout = 5002
@@ -139,24 +150,24 @@ public enum BridgeErrorCode: Int {
 public struct BridgeError: Error, LocalizedError {
     public let code: BridgeErrorCode
     public let message: String
-    
+
     public var errorDescription: String? {
         return "[\(code.rawValue)] \(message)"
     }
-    
+
     public init(code: BridgeErrorCode, message: String) {
         self.code = code
         self.message = message
     }
-    
+
     public static func moduleNotFound(_ name: String) -> BridgeError {
         return BridgeError(code: .moduleNotFound, message: "模块不存在: \(name)")
     }
-    
+
     public static func methodNotFound(_ type: String) -> BridgeError {
         return BridgeError(code: .methodNotFound, message: "方法不存在: \(type)")
     }
-    
+
     public static func invalidParams(_ detail: String) -> BridgeError {
         return BridgeError(code: .invalidParams, message: "参数无效: \(detail)")
     }
@@ -165,16 +176,18 @@ public struct BridgeError: Error, LocalizedError {
 // MARK: - AnyCodable
 
 /// 用于处理任意类型的 Codable 包装器
+// MARK: - AnyCodable 支持 CGFloat
+
 public struct AnyCodable: Codable {
     public let value: Any
-    
+
     public init(_ value: Any) {
         self.value = value
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        
+
         if container.decodeNil() {
             self.value = NSNull()
         } else if let bool = try? container.decode(Bool.self) {
@@ -187,7 +200,9 @@ public struct AnyCodable: Codable {
             self.value = string
         } else if let array = try? container.decode([AnyCodable].self) {
             self.value = array.map { $0.value }
-        } else if let dictionary = try? container.decode([String: AnyCodable].self) {
+        } else if let dictionary = try? container.decode(
+            [String: AnyCodable].self
+        ) {
             self.value = dictionary.mapValues { $0.value }
         } else {
             throw DecodingError.dataCorruptedError(
@@ -196,10 +211,10 @@ public struct AnyCodable: Codable {
             )
         }
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        
+
         switch value {
         case is NSNull:
             try container.encodeNil()
@@ -209,6 +224,10 @@ public struct AnyCodable: Codable {
             try container.encode(int)
         case let double as Double:
             try container.encode(double)
+        case let cgFloat as CGFloat:  // ✅ 支持 CGFloat
+            try container.encode(Double(cgFloat))
+        case let float as Float:  // ✅ 支持 Float
+            try container.encode(Double(float))
         case let string as String:
             try container.encode(string)
         case let array as [Any]:
@@ -218,62 +237,49 @@ public struct AnyCodable: Codable {
         default:
             throw EncodingError.invalidValue(
                 value,
-                EncodingError.Context(codingPath: [], debugDescription: "无法编码的类型: \(type(of: value))")
+                EncodingError.Context(
+                    codingPath: [],
+                    debugDescription: "无法编码的类型: \(type(of: value))"
+                )
             )
         }
     }
-    
-    /// 获取字符串值
-    public var stringValue: String? {
-        return value as? String
-    }
-    
-    /// 获取整数值
-    public var intValue: Int? {
-        return value as? Int
-    }
-    
-    /// 获取布尔值
-    public var boolValue: Bool? {
-        return value as? Bool
-    }
-    
-    /// 获取浮点值
+
+    // MARK: - 提取类型
+
+    public var stringValue: String? { value as? String }
+    public var intValue: Int? { value as? Int }
+    public var boolValue: Bool? { value as? Bool }
     public var doubleValue: Double? {
-        return value as? Double
+        if let d = value as? Double { return d }
+        if let f = value as? Float { return Double(f) }
+        if let cg = value as? CGFloat { return Double(cg) }
+        return nil
     }
-    
-    /// 获取字典值
-    public var dictionaryValue: [String: Any]? {
-        return value as? [String: Any]
-    }
-    
-    /// 获取数组值
-    public var arrayValue: [Any]? {
-        return value as? [Any]
-    }
+    public var dictionaryValue: [String: Any]? { value as? [String: Any] }
+    public var arrayValue: [Any]? { value as? [Any] }
 }
 
 // MARK: - 参数提取扩展
 
-public extension Dictionary where Key == String, Value == AnyCodable {
+extension Dictionary where Key == String, Value == AnyCodable {
     /// 获取字符串参数
-    func getString(_ key: String) -> String? {
+    public func getString(_ key: String) -> String? {
         return self[key]?.stringValue
     }
-    
+
     /// 获取整数参数
-    func getInt(_ key: String) -> Int? {
+    public func getInt(_ key: String) -> Int? {
         return self[key]?.intValue
     }
-    
+
     /// 获取布尔参数
-    func getBool(_ key: String) -> Bool? {
+    public func getBool(_ key: String) -> Bool? {
         return self[key]?.boolValue
     }
-    
+
     /// 获取必填字符串参数
-    func requireString(_ key: String) throws -> String {
+    public func requireString(_ key: String) throws -> String {
         guard let value = getString(key) else {
             throw BridgeError.invalidParams("缺少必填参数: \(key)")
         }
