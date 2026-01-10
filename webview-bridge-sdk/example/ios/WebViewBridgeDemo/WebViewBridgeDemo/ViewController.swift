@@ -90,7 +90,7 @@ class ViewController: UIViewController {
         // 方式二：直接加载 URL（调试用）
         // 如果本地文件不存在，尝试加载内嵌 HTML
         // loadEmbeddedHTML()
-        bridge.loadURL("http://localhost:3000")
+        bridge.loadURL("http://localhost:5174")
     }
 
     /// 加载内嵌的 HTML（用于演示）

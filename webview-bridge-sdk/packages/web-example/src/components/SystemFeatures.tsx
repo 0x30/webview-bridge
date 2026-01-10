@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { Button, Field, Dialog, Toast } from 'vant'
+import { Button, Field, Dialog, Toast, showToast } from 'vant'
 import { Bridge } from '@aspect/webview-bridge'
 
 export default defineComponent({
@@ -71,12 +71,12 @@ export default defineComponent({
 
       const url = urlInput.value.trim()
       if (!url) {
-        Toast('请输入 URL')
+        showToast('请输入 URL')
         return
       }
 
       try {
-        await Bridge.system.openURL({ url })
+        await Bridge.system.openURL(url)
         emit('log', 'success', `已打开: ${url}`)
         urlDialogVisible.value = false
       } catch (error) {
@@ -95,6 +95,7 @@ export default defineComponent({
 
       try {
         await Bridge.system.share({
+          type: 'text',
           text: 'WebView Bridge SDK 示例分享',
           url: 'https://github.com',
         })
@@ -114,9 +115,9 @@ export default defineComponent({
       }
 
       try {
-        await Bridge.clipboard.write({
+        await Bridge.clipboard.set({
           type: 'text',
-          content: 'Hello from WebView Bridge!',
+          text: 'Hello from WebView Bridge!',
         })
         emit('log', 'success', '已复制到剪贴板')
         Toast.success('已复制')
@@ -135,9 +136,9 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.clipboard.read('text')
-        emit('log', 'success', `剪贴板内容: ${result.content || '(空)'}`)
-        Toast(`剪贴板: ${result.content || '(空)'}`)
+        const result = await Bridge.clipboard.get('text')
+        emit('log', 'success', `剪贴板内容: ${result.text || '(空)'}`)
+        showToast(`剪贴板: ${result.text || '(空)'}`)
       } catch (error) {
         emit('log', 'error', `读取失败: ${error}`)
       }
@@ -171,7 +172,10 @@ export default defineComponent({
             系统操作
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <Button size="small" onClick={() => (urlDialogVisible.value = true)}>
+            <Button
+              size="small"
+              onClick={() => (urlDialogVisible.value = true)}
+            >
               打开 URL
             </Button>
             <Button size="small" onClick={share}>

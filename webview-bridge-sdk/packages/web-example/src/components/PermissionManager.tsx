@@ -1,9 +1,13 @@
 import { defineComponent, ref } from 'vue'
 import { Button, Tag, ActionSheet, type ActionSheetAction } from 'vant'
-import { Bridge, type PermissionName, type PermissionStatus } from '@aspect/webview-bridge'
+import {
+  Bridge,
+  type PermissionType,
+  type PermissionStatus,
+} from '@aspect/webview-bridge'
 
 // 常用权限列表
-const PERMISSIONS: Array<{ name: PermissionName; label: string }> = [
+const PERMISSIONS: Array<{ name: PermissionType; label: string }> = [
   { name: 'camera', label: '相机' },
   { name: 'microphone', label: '麦克风' },
   { name: 'photos', label: '相册' },
@@ -49,7 +53,7 @@ export default defineComponent({
     /**
      * 请求权限
      */
-    async function requestPermission(name: PermissionName, label: string) {
+    async function requestPermission(name: PermissionType, label: string) {
       if (!Bridge.isNative) {
         emit('log', 'error', '仅在 Native 环境可用')
         return
@@ -58,7 +62,11 @@ export default defineComponent({
       try {
         const result = await Bridge.permission.request(name)
         permissionStatus.value[name] = result.status
-        emit('log', result.status === 'granted' ? 'success' : 'info', `${label}: ${result.status}`)
+        emit(
+          'log',
+          result.status === 'granted' ? 'success' : 'info',
+          `${label}: ${result.status}`
+        )
       } catch (error) {
         emit('log', 'error', `请求权限失败: ${error}`)
       }
@@ -84,7 +92,9 @@ export default defineComponent({
     /**
      * 获取状态标签类型
      */
-    function getStatusTagType(status?: PermissionStatus): 'success' | 'warning' | 'danger' | 'default' {
+    function getStatusTagType(
+      status?: PermissionStatus
+    ): 'success' | 'warning' | 'danger' | 'default' {
       switch (status) {
         case 'granted':
           return 'success'
@@ -105,7 +115,11 @@ export default defineComponent({
           <Button type="primary" size="small" onClick={queryPermissions}>
             查询权限
           </Button>
-          <Button type="default" size="small" onClick={() => (showSheet.value = true)}>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => (showSheet.value = true)}
+          >
             请求权限
           </Button>
           <Button type="default" size="small" onClick={openSettings}>

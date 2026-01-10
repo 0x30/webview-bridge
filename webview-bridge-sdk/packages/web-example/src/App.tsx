@@ -1,5 +1,5 @@
-import { defineComponent, ref, onMounted, onUnmounted, type PropType } from 'vue'
-import { NavBar, Tag, Button, Cell, CellGroup, Toast, ConfigProvider } from 'vant'
+import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
+import { NavBar, Tag, ConfigProvider } from 'vant'
 import { Bridge } from '@aspect/webview-bridge'
 import DeviceInfo from './components/DeviceInfo'
 import PermissionManager from './components/PermissionManager'
@@ -29,7 +29,10 @@ export default defineComponent({
      */
     function addLog(type: 'success' | 'error' | 'info', message: string) {
       const now = new Date()
-      const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+      const time = `${now.getHours().toString().padStart(2, '0')}:${now
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
       eventLogs.value.unshift({ time, type, message })
       if (eventLogs.value.length > 50) {
         eventLogs.value.pop()
@@ -68,7 +71,10 @@ export default defineComponent({
     /**
      * 处理网络变化事件
      */
-    function handleNetworkChanged(data: { type: string; isConnected: boolean }) {
+    function handleNetworkChanged(data: {
+      type: string
+      isConnected: boolean
+    }) {
       addLog('info', `网络变更: ${data.type}, 已连接: ${data.isConnected}`)
     }
 
@@ -85,8 +91,14 @@ export default defineComponent({
           addLog('success', 'Bridge 已就绪')
 
           // 注册事件监听
-          Bridge.addEventListener('System.AppearanceChanged', handleAppearanceChanged)
-          Bridge.addEventListener('System.FontScaleChanged', handleFontScaleChanged)
+          Bridge.addEventListener(
+            'System.AppearanceChanged',
+            handleAppearanceChanged
+          )
+          Bridge.addEventListener(
+            'System.FontScaleChanged',
+            handleFontScaleChanged
+          )
           Bridge.addEventListener('App.Foreground', handleForeground)
           Bridge.addEventListener('App.Background', handleBackground)
           Bridge.addEventListener('Network.Changed', handleNetworkChanged)
@@ -100,7 +112,10 @@ export default defineComponent({
           }
         } else {
           addLog('info', '运行在浏览器环境，部分功能不可用')
-          colorScheme.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          colorScheme.value = window.matchMedia('(prefers-color-scheme: dark)')
+            .matches
+            ? 'dark'
+            : 'light'
         }
       } catch (error) {
         addLog('error', `Bridge 初始化失败: ${error}`)
@@ -112,8 +127,14 @@ export default defineComponent({
     })
 
     onUnmounted(() => {
-      Bridge.removeEventListener('System.AppearanceChanged', handleAppearanceChanged)
-      Bridge.removeEventListener('System.FontScaleChanged', handleFontScaleChanged)
+      Bridge.removeEventListener(
+        'System.AppearanceChanged',
+        handleAppearanceChanged
+      )
+      Bridge.removeEventListener(
+        'System.FontScaleChanged',
+        handleFontScaleChanged
+      )
       Bridge.removeEventListener('App.Foreground', handleForeground)
       Bridge.removeEventListener('App.Background', handleBackground)
       Bridge.removeEventListener('Network.Changed', handleNetworkChanged)
@@ -123,7 +144,10 @@ export default defineComponent({
       <ConfigProvider theme={colorScheme.value}>
         <div class="page-container">
           {/* 状态栏占位 */}
-          <div class="status-bar-placeholder" style={{ height: 'var(--safe-area-top)' }} />
+          <div
+            class="status-bar-placeholder"
+            style={{ height: 'var(--safe-area-top)' }}
+          />
 
           {/* 导航栏 */}
           <NavBar title="WebView Bridge 示例" />

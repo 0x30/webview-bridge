@@ -1,6 +1,9 @@
 import { defineComponent, ref } from 'vue'
 import { Button, Loading, Tag } from 'vant'
-import { Bridge, type DeviceInfo as DeviceInfoType } from '@aspect/webview-bridge'
+import {
+  Bridge,
+  type DeviceInfo as DeviceInfoType,
+} from '@aspect/webview-bridge'
 
 export default defineComponent({
   name: 'DeviceInfo',
@@ -57,12 +60,12 @@ export default defineComponent({
           <div style={{ marginTop: '12px' }}>
             <div class="info-row">
               <span class="info-label">设备型号</span>
-              <span class="info-value">{deviceInfo.value.model}</span>
+              <span class="info-value">{deviceInfo.value.deviceModel}</span>
             </div>
             <div class="info-row">
               <span class="info-label">系统版本</span>
               <span class="info-value">
-                {deviceInfo.value.platform} {deviceInfo.value.osVersion}
+                {deviceInfo.value.os} {deviceInfo.value.osVersion}
               </span>
             </div>
             <div class="info-row">
@@ -78,7 +81,9 @@ export default defineComponent({
           <div style={{ marginTop: '8px' }}>
             <div class="info-row">
               <span class="info-label">电池电量</span>
-              <span class="info-value">{Math.round(batteryInfo.value.level * 100)}%</span>
+              <span class="info-value">
+                {Math.round(batteryInfo.value.level * 100)}%
+              </span>
             </div>
             <div class="info-row">
               <span class="info-label">充电状态</span>

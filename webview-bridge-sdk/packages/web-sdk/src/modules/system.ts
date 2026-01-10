@@ -1,12 +1,12 @@
 /**
  * System 模块 - 系统级跳转与功能
- * 
+ *
  * 提供打开 URL、系统分享、应用跳转等能力
  * 所有操作均由 Native 端执行
  */
 
-import { BridgeCore } from '../core';
-import { BridgeModule } from '../types';
+import { BridgeCore } from '../core'
+import { BridgeModule } from '../types'
 
 // =============================================================================
 // 类型定义
@@ -15,20 +15,20 @@ import { BridgeModule } from '../types';
 /**
  * 打开 URL 结果
  */
-export type OpenURLResult = 
-  | 'success'       // 成功打开
-  | 'notSupported'  // URL scheme 不支持
-  | 'blocked'       // 被系统拦截
-  | 'failed';       // 打开失败
+export type OpenURLResult =
+  | 'success' // 成功打开
+  | 'notSupported' // URL scheme 不支持
+  | 'blocked' // 被系统拦截
+  | 'failed' // 打开失败
 
 /**
  * 打开 URL 响应
  */
 export interface OpenURLResponse {
   /** 操作结果 */
-  result: OpenURLResult;
+  result: OpenURLResult
   /** 错误信息（如果失败） */
-  error?: string;
+  error?: string
 }
 
 /**
@@ -36,40 +36,40 @@ export interface OpenURLResponse {
  */
 export interface CanOpenURLResult {
   /** 请求的 URL */
-  url: string;
+  url: string
   /** 是否可以打开 */
-  canOpen: boolean;
+  canOpen: boolean
 }
 
 /**
  * 分享内容类型
  */
-export type ShareContentType = 
-  | 'text'    // 纯文本
-  | 'url'     // URL 链接
-  | 'image'   // 图片
-  | 'file';   // 文件
+export type ShareContentType =
+  | 'text' // 纯文本
+  | 'url' // URL 链接
+  | 'image' // 图片
+  | 'file' // 文件
 
 /**
  * 分享内容
  */
 export interface ShareContent {
   /** 内容类型 */
-  type: ShareContentType;
+  type: ShareContentType
   /** 文本内容 */
-  text?: string;
+  text?: string
   /** URL */
-  url?: string;
+  url?: string
   /** 标题 */
-  title?: string;
+  title?: string
   /** 图片 Base64（如果类型为 image） */
-  imageBase64?: string;
+  imageBase64?: string
   /** 图片 URL（如果类型为 image） */
-  imageUrl?: string;
+  imageUrl?: string
   /** 文件路径（如果类型为 file） */
-  filePath?: string;
+  filePath?: string
   /** 文件 MIME 类型 */
-  mimeType?: string;
+  mimeType?: string
 }
 
 /**
@@ -77,43 +77,43 @@ export interface ShareContent {
  */
 export interface ShareResult {
   /** 是否成功分享 */
-  success: boolean;
+  success: boolean
   /** 用户选择的分享应用（如果可获取） */
-  activityType?: string;
+  activityType?: string
   /** 是否取消 */
-  cancelled: boolean;
+  cancelled: boolean
 }
 
 /**
  * 外观模式
  */
-export type AppearanceMode = 
-  | 'light'   // 浅色模式
-  | 'dark'    // 深色模式
-  | 'system'; // 跟随系统
+export type AppearanceMode =
+  | 'light' // 浅色模式
+  | 'dark' // 深色模式
+  | 'system' // 跟随系统
 
 /**
  * 系统信息
  */
 export interface SystemInfo {
   /** 当前外观模式 */
-  appearance: 'light' | 'dark';
+  appearance: 'light' | 'dark'
   /** 系统字体缩放比例 */
-  fontScale: number;
+  fontScale: number
   /** 是否开启粗体文字（辅助功能） */
-  isBoldTextEnabled: boolean;
+  isBoldTextEnabled: boolean
   /** 是否开启减弱动态效果（辅助功能） */
-  isReduceMotionEnabled: boolean;
+  isReduceMotionEnabled: boolean
   /** 是否开启增强对比度（辅助功能） */
-  isHighContrastEnabled: boolean;
+  isHighContrastEnabled: boolean
   /** 当前语言 */
-  language: string;
+  language: string
   /** 当前地区 */
-  region: string;
+  region: string
   /** 日历类型 */
-  calendar: string;
+  calendar: string
   /** 是否 24 小时制 */
-  is24HourTime: boolean;
+  is24HourTime: boolean
 }
 
 /**
@@ -121,11 +121,11 @@ export interface SystemInfo {
  */
 export interface OpenAppStoreParams {
   /** App Store ID (iOS) */
-  appStoreId?: string;
+  appStoreId?: string
   /** 包名 (Android) */
-  packageName?: string;
+  packageName?: string
   /** 是否跳转到评价页面 */
-  writeReview?: boolean;
+  writeReview?: boolean
 }
 
 // =============================================================================
@@ -133,7 +133,7 @@ export interface OpenAppStoreParams {
 // =============================================================================
 
 export class SystemModule implements BridgeModule {
-  readonly moduleName = 'System';
+  readonly moduleName = 'System'
   readonly methods = [
     'OpenURL',
     'CanOpenURL',
@@ -141,8 +141,9 @@ export class SystemModule implements BridgeModule {
     'GetInfo',
     'SetAppearance',
     'OpenSettings',
-    'OpenAppStore'
-  ] as const;
+    'OpenAppStore',
+    'GetColorScheme',
+  ] as const
 
   constructor(private bridge: BridgeCore) {}
 
@@ -153,7 +154,7 @@ export class SystemModule implements BridgeModule {
    * @returns 打开结果
    */
   async openURL(url: string): Promise<OpenURLResponse> {
-    return this.bridge.send<OpenURLResponse>('System.OpenURL', { url });
+    return this.bridge.send<OpenURLResponse>('System.OpenURL', { url })
   }
 
   /**
@@ -162,7 +163,7 @@ export class SystemModule implements BridgeModule {
    * @returns 检查结果
    */
   async canOpenURL(url: string): Promise<CanOpenURLResult> {
-    return this.bridge.send<CanOpenURLResult>('System.CanOpenURL', { url });
+    return this.bridge.send<CanOpenURLResult>('System.CanOpenURL', { url })
   }
 
   /**
@@ -171,7 +172,7 @@ export class SystemModule implements BridgeModule {
    * @returns 分享结果
    */
   async share(content: ShareContent): Promise<ShareResult> {
-    return this.bridge.send<ShareResult>('System.Share', content);
+    return this.bridge.send<ShareResult>('System.Share', content)
   }
 
   /**
@@ -179,7 +180,7 @@ export class SystemModule implements BridgeModule {
    * @returns 系统信息
    */
   async getInfo(): Promise<SystemInfo> {
-    return this.bridge.send<SystemInfo>('System.GetInfo');
+    return this.bridge.send<SystemInfo>('System.GetInfo')
   }
 
   /**
@@ -187,7 +188,7 @@ export class SystemModule implements BridgeModule {
    * @param mode 外观模式
    */
   async setAppearance(mode: AppearanceMode): Promise<void> {
-    return this.bridge.send<void>('System.SetAppearance', { mode });
+    return this.bridge.send<void>('System.SetAppearance', { mode })
   }
 
   /**
@@ -195,7 +196,7 @@ export class SystemModule implements BridgeModule {
    * @param section 设置项（可选，如 wifi, bluetooth 等）
    */
   async openSettings(section?: string): Promise<void> {
-    return this.bridge.send<void>('System.OpenSettings', { section });
+    return this.bridge.send<void>('System.OpenSettings', { section })
   }
 
   /**
@@ -203,7 +204,19 @@ export class SystemModule implements BridgeModule {
    * @param params 跳转参数
    */
   async openAppStore(params?: OpenAppStoreParams): Promise<OpenURLResponse> {
-    return this.bridge.send<OpenURLResponse>('System.OpenAppStore', params || {});
+    return this.bridge.send<OpenURLResponse>(
+      'System.OpenAppStore',
+      params ?? {}
+    )
+  }
+
+  /**
+   * 获取当前颜色方案
+   */
+  async getColorScheme(): Promise<{ colorScheme: 'light' | 'dark' }> {
+    return this.bridge.send<{ colorScheme: 'light' | 'dark' }>(
+      'System.GetColorScheme'
+    )
   }
 
   // =========== 便捷方法 ===========
@@ -213,7 +226,7 @@ export class SystemModule implements BridgeModule {
    * @param phoneNumber 电话号码
    */
   async call(phoneNumber: string): Promise<OpenURLResponse> {
-    return this.openURL(`tel:${phoneNumber}`);
+    return this.openURL(`tel:${phoneNumber}`)
   }
 
   /**
@@ -222,11 +235,11 @@ export class SystemModule implements BridgeModule {
    * @param body 短信内容（可选）
    */
   async sendSMS(phoneNumber: string, body?: string): Promise<OpenURLResponse> {
-    let url = `sms:${phoneNumber}`;
+    let url = `sms:${phoneNumber}`
     if (body) {
-      url += `&body=${encodeURIComponent(body)}`;
+      url += `&body=${encodeURIComponent(body)}`
     }
-    return this.openURL(url);
+    return this.openURL(url)
   }
 
   /**
@@ -235,14 +248,18 @@ export class SystemModule implements BridgeModule {
    * @param subject 邮件主题（可选）
    * @param body 邮件内容（可选）
    */
-  async sendEmail(email: string, subject?: string, body?: string): Promise<OpenURLResponse> {
-    let url = `mailto:${email}`;
-    const params: string[] = [];
-    if (subject) params.push(`subject=${encodeURIComponent(subject)}`);
-    if (body) params.push(`body=${encodeURIComponent(body)}`);
+  async sendEmail(
+    email: string,
+    subject?: string,
+    body?: string
+  ): Promise<OpenURLResponse> {
+    let url = `mailto:${email}`
+    const params: string[] = []
+    if (subject) params.push(`subject=${encodeURIComponent(subject)}`)
+    if (body) params.push(`body=${encodeURIComponent(body)}`)
     if (params.length > 0) {
-      url += `?${params.join('&')}`;
+      url += `?${params.join('&')}`
     }
-    return this.openURL(url);
+    return this.openURL(url)
   }
 }
