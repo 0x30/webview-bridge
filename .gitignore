@@ -100,3 +100,7 @@ fastlane/test_output
 # 测试覆盖率 / 输出
 coverage/
 .nyc_output/
+
+
+*.mdb
+ios/.build/
