@@ -95,3 +95,94 @@ export {
   type StorageKeysResult,
   type StorageInfo,
 } from './storage';
+
+// Contacts 模块
+export {
+  ContactsModule,
+  type Contact,
+  type PhoneNumber,
+  type EmailAddress,
+  type PostalAddress,
+  type GetContactsParams,
+  type GetContactsResult,
+  type PickContactResult,
+  type CreateContactParams,
+  type ContactsPermissionResult,
+} from './contacts';
+
+// Media 模块
+export {
+  MediaModule,
+  type CameraDevice,
+  type MediaType,
+  type MediaResult,
+  type TakePhotoParams,
+  type RecordVideoParams,
+  type PickMediaParams,
+  type PickMediaResult,
+  type Album,
+  type PhotoInfo,
+  type GetPhotosParams,
+  type GetPhotosResult,
+  type SaveToAlbumParams,
+  type MediaPermissionType,
+  type MediaPermissionResult,
+} from './media';
+
+// Location 模块
+export {
+  LocationModule,
+  type Coordinates,
+  type Position,
+  type LocationResult,
+  type GetPositionParams,
+  type WatchPositionParams,
+  type RequestPermissionParams as LocationRequestPermissionParams,
+  type PermissionResult as LocationPermissionResult,
+  type PermissionStatusResult as LocationPermissionStatusResult,
+  type WatchResult,
+  type GeocodeParams,
+  type ReverseGeocodeParams,
+  type Address,
+  type GeocodeResult,
+  type PositionChangedEvent,
+  type PermissionChangedEvent as LocationPermissionChangedEvent,
+} from './location';
+
+// Biometrics 模块
+export {
+  BiometricsModule,
+  type BiometryType,
+  type BiometricsAvailability,
+  type BiometryTypeInfo,
+  type AuthenticateParams,
+  type AuthenticateResult,
+  type EnrollmentResult,
+} from './biometrics';
+
+// NFC 模块
+export {
+  NFCModule,
+  type TNFType,
+  type NFCAvailability,
+  type NFCEnabled,
+  type NDEFRecord,
+  type ScanParams as NFCScanParams,
+  type ScanResult as NFCScanResult,
+  type WriteRecordParams,
+  type WriteParams as NFCWriteParams,
+  type WriteResult as NFCWriteResult,
+  type TagDetectedEvent,
+  type WriteSuccessEvent,
+  type WriteErrorEvent,
+  type NFCErrorEvent,
+} from './nfc';
+
+// Network 模块
+export {
+  NetworkModule,
+  type ConnectionType,
+  type CellularType,
+  type NetworkStatus,
+  type MonitoringResult,
+} from './network';
