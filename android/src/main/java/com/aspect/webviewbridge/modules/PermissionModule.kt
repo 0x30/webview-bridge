@@ -189,10 +189,14 @@ class PermissionModule(
         }
         
         val status = checkPermissionStatus(permissionType)
+        val granted = status == PermissionStatus.GRANTED
+        
+        android.util.Log.d("PermissionModule", "GetStatus: permission=$permissionName, type=$permissionType, status=$status, granted=$granted")
         
         callback(Result.success(mapOf(
             "permission" to permissionName,
             "status" to status.name.lowercase(),
+            "granted" to granted,
             "canRequestAgain" to (status == PermissionStatus.NOT_DETERMINED || status == PermissionStatus.DENIED)
         )))
     }
@@ -215,11 +219,15 @@ class PermissionModule(
             return
         }
         
+        android.util.Log.d("PermissionModule", "Request: permissionName=$permissionName, permissionType=$permissionType, androidPermission=${permissionType.permission}")
+        
         // 检查 SDK 版本
         if (Build.VERSION.SDK_INT < permissionType.minSdk) {
+            android.util.Log.d("PermissionModule", "SDK 版本低于最低要求，直接授权")
             callback(Result.success(mapOf(
                 "permission" to permissionName,
                 "status" to "granted",
+                "granted" to true,
                 "canRequestAgain" to false
             )))
             return
@@ -233,10 +241,14 @@ class PermissionModule(
         
         // 检查是否已授权
         val currentStatus = checkPermissionStatus(permissionType)
+        android.util.Log.d("PermissionModule", "当前权限状态: $currentStatus")
+        
         if (currentStatus == PermissionStatus.GRANTED) {
+            android.util.Log.d("PermissionModule", "权限已授予，直接返回")
             callback(Result.success(mapOf(
                 "permission" to permissionName,
                 "status" to "granted",
+                "granted" to true,
                 "canRequestAgain" to false
             )))
             return
@@ -245,6 +257,7 @@ class PermissionModule(
         // 需要请求权限
         val activity = bridgeContext.getActivity()
         if (activity != null) {
+            android.util.Log.d("PermissionModule", "准备请求权限: ${permissionType.permission}")
             permissionCallback = callback
             pendingPermissions = listOf(permissionType.permission)
             
@@ -254,6 +267,7 @@ class PermissionModule(
                 PERMISSION_REQUEST_CODE
             )
         } else {
+            android.util.Log.e("PermissionModule", "无法获取 Activity")
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
         }
     }
@@ -444,6 +458,7 @@ class PermissionModule(
             callback(Result.success(mapOf(
                 "permission" to name,
                 "status" to if (granted) "granted" else "denied",
+                "granted" to granted,
                 "canRequestAgain" to !granted
             )))
         } else {

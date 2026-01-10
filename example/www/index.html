@@ -895,7 +895,7 @@
         }
 
         // 接收响应
-        window.__bridgeReceiveResponse__ = function(responseJson) {
+        window.__bridgeCallback = function(responseJson) {
             try {
                 const response = JSON.parse(responseJson);
                 const callback = callbacks[response.callbackId];
@@ -915,7 +915,7 @@
         };
 
         // 接收事件
-        window.__bridgeReceiveEvent__ = function(eventJson) {
+        window.__bridgeEvent = function(eventJson) {
             try {
                 const event = JSON.parse(eventJson);
                 addEventLog(event.eventName, event.data);
@@ -1002,7 +1002,7 @@
                 data: mockData[request.type] || {}
             };
 
-            window.__bridgeReceiveResponse__(JSON.stringify(response));
+            window.__bridgeCallback(JSON.stringify(response));
         }
 
         // API 调用封装

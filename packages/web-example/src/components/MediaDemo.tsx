@@ -22,8 +22,8 @@ export default defineComponent({
 
       try {
         const [camera, photosResult] = await Promise.all([
-          Bridge.media.hasPermission('camera'),
-          Bridge.media.hasPermission('photos'),
+          Bridge.permission.getStatus('camera'),
+          Bridge.permission.getStatus('photos'),
         ])
         hasPermission.value = {
           camera: camera.granted,
@@ -45,7 +45,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.media.requestPermission(type)
+        const result = await Bridge.permission.request(type)
         if (type === 'camera') {
           hasPermission.value.camera = result.granted
         } else {

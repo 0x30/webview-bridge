@@ -358,6 +358,7 @@ class WebViewBridge(
      */
     private fun sendResponse(response: BridgeResponse) {
         val json = response.toJson().escapeForJs()
+        Log.d(TAG, "发送响应给 JS: ${json.take(200)}...")
         val js = "window.__bridgeCallback && window.__bridgeCallback('$json')"
         evaluateJavaScript(js)
     }

@@ -27,7 +27,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.location.hasPermission()
+        const result = await Bridge.permission.getStatus('locationWhenInUse')
         hasPermission.value = result.granted
         emit('log', 'info', `位置权限: ${result.status}`)
       } catch (error) {
@@ -45,7 +45,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.location.requestPermission({ type: 'whenInUse' })
+        const result = await Bridge.permission.request('locationWhenInUse')
         hasPermission.value = result.granted
         emit('log', result.granted ? 'success' : 'warning', 
           `权限状态: ${result.status}`)

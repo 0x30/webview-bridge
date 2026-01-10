@@ -30,7 +30,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.contacts.hasPermission()
+        const result = await Bridge.permission.getStatus('contacts')
         hasPermission.value = result.granted
         emit('log', 'info', `联系人权限: ${result.granted ? '已授权' : '未授权'}`)
       } catch (error) {
@@ -48,7 +48,7 @@ export default defineComponent({
       }
 
       try {
-        const result = await Bridge.contacts.requestPermission()
+        const result = await Bridge.permission.request('contacts')
         hasPermission.value = result.granted
         emit('log', result.granted ? 'success' : 'warning', 
           `权限请求${result.granted ? '成功' : '被拒绝'}`)
