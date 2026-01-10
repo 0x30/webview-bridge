@@ -1,0 +1,89 @@
+# ==========================
+# 1. macOS / 系统文件
+# ==========================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================
+# 2. Node / Web / TS
+# ==========================
+# Node modules
+node_modules/
+# pnpm / yarn / npm
+.pnpm-debug.log
+.pnpm-store/
+yarn.lock
+package-lock.json
+# Build / cache / output
+dist/
+out/
+.vite/
+*.tsbuildinfo
+*.log
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# ==========================
+# 3. iOS / Swift
+# ==========================
+# Build / Derived data
+build/
+DerivedData/
+*.xcworkspace
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+# CocoaPods
+Pods/
+Podfile.lock
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ==========================
+# 4. Android / Kotlin / Gradle
+# ==========================
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+local.properties
+*.iml
+.idea/
+*.kotlin_module
+# Gradle wrapper exception (keep jar)
+!gradle/wrapper/gradle-wrapper.jar
+
+# ==========================
+# 5. Editors / IDE / Misc
+# ==========================
+# VSCode / JetBrains
+.vscode/
+.idea/
+*.iml
+# Editor backups
+*~
+*.swp
+*.swo
+*.tmp
+# Coverage / test output
+coverage/
+.nyc_output/

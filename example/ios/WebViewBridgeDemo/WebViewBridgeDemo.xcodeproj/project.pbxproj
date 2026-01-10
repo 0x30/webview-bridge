@@ -14,9 +14,22 @@
 		BE0ED6512F128768008ECA81 /* WebViewBridgeDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WebViewBridgeDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BE0ED6632F128769008ECA81 /* Exceptions for "WebViewBridgeDemo" folder in "WebViewBridgeDemo" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BE0ED6502F128768008ECA81 /* WebViewBridgeDemo */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BE0ED6532F128768008ECA81 /* WebViewBridgeDemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BE0ED6632F128769008ECA81 /* Exceptions for "WebViewBridgeDemo" folder in "WebViewBridgeDemo" target */,
+			);
 			path = WebViewBridgeDemo;
 			sourceTree = "<group>";
 		};
