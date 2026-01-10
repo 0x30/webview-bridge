@@ -96,11 +96,19 @@ class WebViewBridge(
     private var launchParams: Map<String, Any> = emptyMap()
 
     init {
+        Log.d(TAG, "========== WebViewBridge 初始化开始 ==========")
+        Log.d(TAG, "配置: debug=${configuration.debug}, jsInterface=${configuration.jsInterfaceName}")
+        
         setupWebView()
+        Log.d(TAG, "WebView 配置完成")
+        
         if (configuration.urlScheme != null) {
             setupAssetLoader()
+            Log.d(TAG, "AssetLoader 配置完成")
         }
+        
         registerBuiltInModules()
+        Log.d(TAG, "========== WebViewBridge 初始化完成，已注册 ${modules.size} 个模块 ==========")
     }
 
     /**
@@ -108,6 +116,8 @@ class WebViewBridge(
      */
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
+        Log.d(TAG, "开始配置 WebView...")
+        
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -122,12 +132,14 @@ class WebViewBridge(
 
         // 添加 JavaScript 接口
         webView.addJavascriptInterface(BridgeJSInterface(), configuration.jsInterfaceName)
+        Log.d(TAG, "JavaScript 接口已添加: ${configuration.jsInterfaceName}")
 
         // 设置 WebViewClient 处理资源请求
         webView.webViewClient = BridgeWebViewClient()
 
         if (configuration.debug) {
             WebView.setWebContentsDebuggingEnabled(true)
+            Log.d(TAG, "WebView 调试已启用")
         }
     }
 
@@ -147,20 +159,42 @@ class WebViewBridge(
      * 注册内置模块
      */
     private fun registerBuiltInModules() {
-        registerModule(AppModule(context, this))
-        registerModule(DeviceModule(context, this))
-        registerModule(PermissionModule(context, this))
-        registerModule(ClipboardModule(context, this))
-        registerModule(HapticsModule(context, this))
-        registerModule(StatusBarModule(context, this))
-        registerModule(SystemModule(context, this))
-        registerModule(StorageModule(context, this))
-        registerModule(BiometricsModule(context, this, activityProvider))
-        registerModule(ContactsModule(context, this, activityProvider))
-        registerModule(LocationModule(context, this))
-        registerModule(MediaModule(context, this, activityProvider))
-        registerModule(NetworkModule(context, this))
-        registerModule(NFCModule(context, this, activityProvider))
+        Log.d(TAG, "开始注册内置模块...")
+        
+        // 使用安全注册，确保单个模块失败不影响其他模块
+        safeRegisterModule { AppModule(context, this) }
+        safeRegisterModule { DeviceModule(context, this) }
+        safeRegisterModule { PermissionModule(context, this) }
+        safeRegisterModule { ClipboardModule(context, this) }
+        safeRegisterModule { HapticsModule(context, this) }
+        safeRegisterModule { StatusBarModule(context, this) }
+        safeRegisterModule { SystemModule(context, this) }
+        safeRegisterModule { StorageModule(context, this) }
+        safeRegisterModule { BiometricsModule(context, this, activityProvider) }
+        safeRegisterModule { ContactsModule(context, this, activityProvider) }
+        safeRegisterModule { LocationModule(context, this) }
+        safeRegisterModule { MediaModule(context, this, activityProvider) }
+        safeRegisterModule { NetworkModule(context, this) }
+        safeRegisterModule { NFCModule(context, this, activityProvider) }
+        
+        Log.d(TAG, "模块注册完成！已注册 ${modules.size} 个模块:")
+        modules.keys.forEach { moduleName ->
+            Log.d(TAG, "  ✓ $moduleName")
+        }
+    }
+    
+    /**
+     * 安全注册模块 - 捕获异常以防止单个模块失败影响整体
+     */
+    private fun safeRegisterModule(creator: () -> BridgeModule) {
+        try {
+            val module = creator()
+            registerModule(module)
+            Log.d(TAG, "  ✓ ${module.moduleName} 注册成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "  ✗ 模块注册失败: ${e.message}", e)
+            e.printStackTrace()
+        }
     }
 
     /**
@@ -394,6 +428,7 @@ class WebViewBridge(
 
         @JavascriptInterface
         fun postMessage(message: String) {
+            Log.d(TAG, "收到来自 JS 的消息: ${message.take(100)}...")
             handleRequest(message)
         }
     }

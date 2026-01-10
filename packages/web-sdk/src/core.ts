@@ -44,6 +44,10 @@ declare global {
     AndroidBridge?: {
       postMessage: (message: string) => void
     }
+    /** 通用 Native Bridge 接口（推荐使用） */
+    NativeBridge?: {
+      postMessage: (message: string) => void
+    }
     /** Native 调用的响应回调函数 */
     __bridgeCallback?: (responseJson: string) => void
     /** Native 调用的事件回调函数 */
@@ -141,15 +145,15 @@ export class BridgeCore {
       return
     }
 
-    // Android 检查
-    if (window.AndroidBridge) {
+    // Android 检查（支持两种接口名）
+    if (window.NativeBridge || window.AndroidBridge) {
       this.markReady()
       return
     }
 
     // 等待可能的延迟注入
     setTimeout(() => {
-      if (window.webkit?.messageHandlers?.bridge || window.AndroidBridge) {
+      if (window.webkit?.messageHandlers?.bridge || window.NativeBridge || window.AndroidBridge) {
         this.markReady()
       }
     }, 100)
@@ -184,7 +188,7 @@ export class BridgeCore {
    * 检查是否运行在 Native 环境
    */
   isNativeEnvironment(): boolean {
-    return !!(window.webkit?.messageHandlers?.bridge || window.AndroidBridge)
+    return !!(window.webkit?.messageHandlers?.bridge || window.NativeBridge || window.AndroidBridge)
   }
 
   /**
@@ -273,7 +277,12 @@ export class BridgeCore {
       return
     }
 
-    // 尝试 Android
+    // 尝试 Android (NativeBridge 是新接口名，AndroidBridge 是旧接口名，向后兼容)
+    if (window.NativeBridge) {
+      window.NativeBridge.postMessage(message)
+      return
+    }
+    
     if (window.AndroidBridge) {
       window.AndroidBridge.postMessage(message)
       return
