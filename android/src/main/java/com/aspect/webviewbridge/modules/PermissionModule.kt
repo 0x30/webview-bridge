@@ -427,14 +427,19 @@ class PermissionModule(
         val callback = permissionCallback ?: return
         permissionCallback = null
         
+        android.util.Log.d("PermissionModule", "权限请求结果: permissions=${permissions.contentToString()}, grantResults=${grantResults.contentToString()}")
+        
         if (pendingPermissions.size == 1) {
             // 单个权限请求
             val permission = pendingPermissions.firstOrNull() ?: return
             val granted = grantResults.isNotEmpty() && 
                     grantResults[0] == PackageManager.PERMISSION_GRANTED
             
+            android.util.Log.d("PermissionModule", "单个权限: permission=$permission, granted=$granted")
+            
             val permissionType = AndroidPermissionType.values().find { it.permission == permission }
-            val name = permissionType?.name?.lowercase() ?: permission
+            // 返回 Web SDK 通用名称，而不是 Android 枚举名
+            val name = toWebPermissionName(permissionType)
             
             callback(Result.success(mapOf(
                 "permission" to name,
@@ -446,7 +451,7 @@ class PermissionModule(
             val results = permissions.mapIndexed { index, permission ->
                 val granted = grantResults.getOrNull(index) == PackageManager.PERMISSION_GRANTED
                 val permissionType = AndroidPermissionType.values().find { it.permission == permission }
-                val name = permissionType?.name?.lowercase() ?: permission
+                val name = toWebPermissionName(permissionType)
                 
                 mapOf(
                     "permission" to name,
@@ -491,6 +496,37 @@ class PermissionModule(
                 PermissionStatus.DENIED
             }
             else -> PermissionStatus.NOT_DETERMINED
+        }
+    }
+    
+    /**
+     * 将 Android 权限类型转换为 Web SDK 通用权限名称
+     */
+    private fun toWebPermissionName(permissionType: AndroidPermissionType?): String {
+        if (permissionType == null) return "unknown"
+        
+        return when (permissionType) {
+            AndroidPermissionType.CAMERA -> "camera"
+            AndroidPermissionType.RECORD_AUDIO -> "microphone"
+            AndroidPermissionType.READ_CONTACTS, AndroidPermissionType.WRITE_CONTACTS -> "contacts"
+            AndroidPermissionType.ACCESS_FINE_LOCATION, AndroidPermissionType.ACCESS_COARSE_LOCATION -> "locationWhenInUse"
+            AndroidPermissionType.ACCESS_BACKGROUND_LOCATION -> "locationBackground"
+            AndroidPermissionType.READ_MEDIA_IMAGES -> "photos"
+            AndroidPermissionType.READ_MEDIA_VIDEO -> "video"
+            AndroidPermissionType.READ_MEDIA_AUDIO -> "readMediaAudio"
+            AndroidPermissionType.READ_EXTERNAL_STORAGE, AndroidPermissionType.WRITE_EXTERNAL_STORAGE -> "storage"
+            AndroidPermissionType.READ_CALENDAR, AndroidPermissionType.WRITE_CALENDAR -> "calendar"
+            AndroidPermissionType.READ_PHONE_STATE -> "phone"
+            AndroidPermissionType.READ_SMS, AndroidPermissionType.SEND_SMS -> "sms"
+            AndroidPermissionType.BODY_SENSORS -> "sensors"
+            AndroidPermissionType.ACTIVITY_RECOGNITION -> "activityRecognition"
+            AndroidPermissionType.BLUETOOTH -> "bluetooth"
+            AndroidPermissionType.BLUETOOTH_SCAN -> "bluetoothScan"
+            AndroidPermissionType.BLUETOOTH_CONNECT -> "bluetoothConnect"
+            AndroidPermissionType.BLUETOOTH_ADVERTISE -> "bluetoothAdvertise"
+            AndroidPermissionType.POST_NOTIFICATIONS -> "notifications"
+            AndroidPermissionType.SYSTEM_ALERT_WINDOW -> "systemAlertWindow"
+            else -> permissionType.name.lowercase()
         }
     }
     
