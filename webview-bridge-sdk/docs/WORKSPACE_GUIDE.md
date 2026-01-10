@@ -191,6 +191,10 @@ let config = BridgeConfiguration(
 
 let bridge = WebViewBridge.create(configuration: config)
 bridge.loadLocalHTML(named: "index")  // 加载 myapp://webview/index.html
+
+// 在客户端工程中注册自定义模块 (示例)
+// let userModule = UserModule(bridge: bridge)
+// bridge.registerModule(userModule)
 ```
 
 #### 开发模式 (HTTP)

@@ -366,11 +366,11 @@ fun onDestroy() {
 
 ## 示例模块
 
-完整的示例模块代码请参考:
+完整的示例模块代码请参考（请在客户端工程中使用，不要放入 SDK 源码）:
 
-- **Web**: [packages/web-sdk/src/modules/example.ts](../packages/web-sdk/src/modules/example.ts)
-- **iOS**: [ios/Sources/Modules/ExampleModule.swift](../ios/Sources/Modules/ExampleModule.swift)  
-- **Android**: [android/src/main/java/.../modules/ExampleModule.kt](../android/src/main/java/com/aspect/webviewbridge/modules/ExampleModule.kt)
+- **Web**: [docs/examples/web/example.ts](../docs/examples/web/example.ts)
+- **iOS**: [docs/examples/ios/ExampleModule.swift](../docs/examples/ios/ExampleModule.swift)
+- **Android**: [docs/examples/android/ExampleModule.kt](../docs/examples/android/ExampleModule.kt)
 
 这些示例包含:
 - `UserModule` - 用户管理模块 (登录/登出/资料更新)
