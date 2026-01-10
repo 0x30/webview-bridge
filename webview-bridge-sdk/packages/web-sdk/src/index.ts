@@ -17,6 +17,12 @@ import {
   StatusBarModule,
   SystemModule,
   StorageModule,
+  ContactsModule,
+  MediaModule,
+  LocationModule,
+  BiometricsModule,
+  NFCModule,
+  NetworkModule,
 } from './modules';
 import { SystemEventName, EventDataMap } from './events';
 
@@ -75,6 +81,24 @@ class WebViewBridge {
   /** Storage 模块 - 本地存储 */
   public readonly storage: StorageModule;
 
+  /** Contacts 模块 - 联系人 */
+  public readonly contacts: ContactsModule;
+
+  /** Media 模块 - 相机与相册 */
+  public readonly media: MediaModule;
+
+  /** Location 模块 - 位置服务 */
+  public readonly location: LocationModule;
+
+  /** Biometrics 模块 - 生物识别 */
+  public readonly biometrics: BiometricsModule;
+
+  /** NFC 模块 - 近场通信 */
+  public readonly nfc: NFCModule;
+
+  /** Network 模块 - 网络状态 */
+  public readonly network: NetworkModule;
+
   constructor(config?: BridgeConfig) {
     this.core = BridgeCore.getInstance(config);
     
@@ -87,6 +111,12 @@ class WebViewBridge {
     this.statusBar = new StatusBarModule(this.core);
     this.system = new SystemModule(this.core);
     this.storage = new StorageModule(this.core);
+    this.contacts = new ContactsModule(this.core);
+    this.media = new MediaModule(this.core);
+    this.location = new LocationModule(this.core);
+    this.biometrics = new BiometricsModule(this.core);
+    this.nfc = new NFCModule(this.core);
+    this.network = new NetworkModule(this.core);
   }
 
   /**

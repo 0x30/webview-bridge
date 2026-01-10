@@ -1,15 +1,21 @@
 import { defineComponent, ref, onMounted, onUnmounted } from 'vue'
-import { NavBar, Tag, ConfigProvider } from 'vant'
+import { NavBar, Tag, ConfigProvider, Tabs, Tab } from 'vant'
 import { Bridge } from '@aspect/webview-bridge'
 import DeviceInfo from './components/DeviceInfo'
 import PermissionManager from './components/PermissionManager'
 import SystemFeatures from './components/SystemFeatures'
 import EventMonitor from './components/EventMonitor'
+import ContactsDemo from './components/ContactsDemo'
+import MediaDemo from './components/MediaDemo'
+import LocationDemo from './components/LocationDemo'
+import BiometricsDemo from './components/BiometricsDemo'
+import NFCDemo from './components/NFCDemo'
+import NetworkDemo from './components/NetworkDemo'
 import './styles/index.css'
 
 export interface LogItem {
   time: string
-  type: 'success' | 'error' | 'info'
+  type: 'success' | 'error' | 'info' | 'warning'
   message: string
 }
 
@@ -20,6 +26,7 @@ export default defineComponent({
     const bridgeReady = ref(false)
     const isNative = ref(false)
     const colorScheme = ref<'light' | 'dark'>('light')
+    const activeTab = ref(0)
 
     // 事件日志
     const eventLogs = ref<LogItem[]>([])
@@ -27,7 +34,7 @@ export default defineComponent({
     /**
      * 添加日志
      */
-    function addLog(type: 'success' | 'error' | 'info', message: string) {
+    function addLog(type: 'success' | 'error' | 'info' | 'warning', message: string) {
       const now = new Date()
       const time = `${now.getHours().toString().padStart(2, '0')}:${now
         .getMinutes()
@@ -169,14 +176,43 @@ export default defineComponent({
             </div>
           </div>
 
-          {/* 设备信息 */}
-          <DeviceInfo onLog={addLog} />
+          {/* 功能模块 Tabs */}
+          <Tabs v-model:active={activeTab.value} sticky swipeable>
+            <Tab title="基础">
+              {/* 设备信息 */}
+              <DeviceInfo onLog={addLog} />
 
-          {/* 权限管理 */}
-          <PermissionManager onLog={addLog} />
+              {/* 权限管理 */}
+              <PermissionManager onLog={addLog} />
 
-          {/* 系统功能 */}
-          <SystemFeatures onLog={addLog} />
+              {/* 系统功能 */}
+              <SystemFeatures onLog={addLog} />
+            </Tab>
+
+            <Tab title="联系人">
+              <ContactsDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="相机相册">
+              <MediaDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="位置">
+              <LocationDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="生物识别">
+              <BiometricsDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="NFC">
+              <NFCDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="网络">
+              <NetworkDemo onLog={addLog} />
+            </Tab>
+          </Tabs>
 
           {/* 事件监听 */}
           <EventMonitor logs={eventLogs.value} />
