@@ -83,9 +83,36 @@ enum class AndroidPermissionType(val permission: String, val minSdk: Int = 1) {
     
     companion object {
         fun fromString(value: String): AndroidPermissionType? {
-            return values().find { 
+            // 先尝试直接匹配枚举名或权限字符串
+            val direct = values().find { 
                 it.name.equals(value, ignoreCase = true) || 
                 it.permission.equals(value, ignoreCase = true)
+            }
+            if (direct != null) return direct
+            
+            // Web SDK 通用名称映射
+            return when (value.lowercase()) {
+                "camera" -> CAMERA
+                "microphone", "recordaudio" -> RECORD_AUDIO
+                "contacts" -> READ_CONTACTS
+                "locationwheninuse", "location" -> ACCESS_FINE_LOCATION
+                "locationbackground" -> ACCESS_BACKGROUND_LOCATION
+                "photos", "readmediaimages" -> READ_MEDIA_IMAGES
+                "video", "readmediavideo" -> READ_MEDIA_VIDEO
+                "readmediaaudio" -> READ_MEDIA_AUDIO
+                "storage", "readexternalstorage" -> READ_EXTERNAL_STORAGE
+                "calendar" -> READ_CALENDAR
+                "phone", "readphonestate" -> READ_PHONE_STATE
+                "sms" -> READ_SMS
+                "sensors", "bodysensors" -> BODY_SENSORS
+                "activityrecognition", "motion" -> ACTIVITY_RECOGNITION
+                "bluetooth" -> BLUETOOTH
+                "bluetoothscan" -> BLUETOOTH_SCAN
+                "bluetoothconnect" -> BLUETOOTH_CONNECT
+                "bluetoothadvertise" -> BLUETOOTH_ADVERTISE
+                "notifications", "postnotifications" -> POST_NOTIFICATIONS
+                "systemalertwindow" -> SYSTEM_ALERT_WINDOW
+                else -> null
             }
         }
     }

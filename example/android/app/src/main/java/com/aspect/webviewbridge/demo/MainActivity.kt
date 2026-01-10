@@ -77,12 +77,8 @@ class MainActivity : AppCompatActivity() {
      * 初始化 WebViewBridge
      */
     private fun setupBridge() {
-        // 创建 Bridge 实例，传入 Activity 提供者用于权限请求等操作
-        bridge = WebViewBridge(
-            context = this,
-            webView = webView,
-            activityProvider = { this }
-        )
+        // 创建 Bridge 实例（会自动将 context 作为 Activity 使用）
+        bridge = WebViewBridge(this, webView)
         
         // 设置启动参数（可选）
         bridge.setLaunchParams(mapOf(

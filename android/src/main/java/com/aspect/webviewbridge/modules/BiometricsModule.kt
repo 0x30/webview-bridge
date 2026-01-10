@@ -20,8 +20,7 @@ import com.aspect.webviewbridge.protocol.BridgeRequest
 
 class BiometricsModule(
     private val context: Context,
-    private val bridgeContext: BridgeModuleContext,
-    private val activityProvider: () -> FragmentActivity?
+    private val bridgeContext: BridgeModuleContext
 ) : BridgeModule {
 
     override val moduleName: String = "Biometrics"
@@ -99,7 +98,7 @@ class BiometricsModule(
     // MARK: - Authenticate
 
     private fun authenticate(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
-        val activity = activityProvider()
+        val activity = bridgeContext.getActivity() as? FragmentActivity
         if (activity == null) {
             callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
             return

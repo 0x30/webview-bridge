@@ -76,7 +76,10 @@ class WebViewBridge(
     private val context: Context,
     private val webView: WebView,
     private val configuration: BridgeConfiguration = BridgeConfiguration.DEFAULT,
-    private val activityProvider: () -> FragmentActivity? = { null }
+    private val activityProvider: () -> Activity? = { 
+        // 默认：如果 context 本身就是 Activity，直接返回
+        context as? Activity 
+    }
 ) : BridgeModuleContext {
 
     companion object {
@@ -171,7 +174,7 @@ class WebViewBridge(
         safeRegisterModule { StatusBarModule(context, this) }
         safeRegisterModule { SystemModule(context, this) }
         safeRegisterModule { StorageModule(context, this) }
-        safeRegisterModule { BiometricsModule(context, this, activityProvider) }
+        safeRegisterModule { BiometricsModule(context, this) }
         safeRegisterModule { ContactsModule(context, this, activityProvider) }
         safeRegisterModule { LocationModule(context, this) }
         safeRegisterModule { MediaModule(context, this, activityProvider) }
