@@ -57,18 +57,19 @@ class NetworkModule(
 
     // MARK: - GetStatus
 
-    private fun getStatus(): Map<String, Any> {
-        return getCurrentNetworkStatus()
+    private fun getStatus(callback: (Result<Any?>) -> Unit) {
+        callback(Result.success(getCurrentNetworkStatus()))
     }
 
     // MARK: - StartMonitoring
 
-    private fun startMonitoring(): Map<String, Any> {
+    private fun startMonitoring(callback: (Result<Any?>) -> Unit) {
         if (isMonitoring) {
-            return mapOf("monitoring" to true, "message" to "已在监听中")
+            callback(Result.success(mapOf("monitoring" to true, "message" to "已在监听中")))
+            return
         }
 
-        val callback = object : ConnectivityManager.NetworkCallback() {
+        val networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 sendNetworkStatus()
             }
@@ -92,24 +93,24 @@ class NetworkModule(
             }
         }
 
-        networkCallback = callback
+        this.networkCallback = networkCallback
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            connectivityManager.registerDefaultNetworkCallback(callback)
+            connectivityManager.registerDefaultNetworkCallback(networkCallback)
         } else {
             val request = NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .build()
-            connectivityManager.registerNetworkCallback(request, callback)
+            connectivityManager.registerNetworkCallback(request, networkCallback)
         }
 
         isMonitoring = true
-        return mapOf("monitoring" to true)
+        callback(Result.success(mapOf("monitoring" to true)))
     }
 
     // MARK: - StopMonitoring
 
-    private fun stopMonitoring(): Map<String, Boolean> {
+    private fun stopMonitoring(callback: (Result<Any?>) -> Unit) {
         networkCallback?.let {
             try {
                 connectivityManager.unregisterNetworkCallback(it)
@@ -120,7 +121,7 @@ class NetworkModule(
         networkCallback = null
         isMonitoring = false
 
-        return mapOf("monitoring" to false)
+        callback(Result.success(mapOf("monitoring" to false)))
     }
 
     // MARK: - 辅助方法
@@ -138,7 +139,8 @@ class NetworkModule(
 
         if (capabilities != null) {
             isMetered = !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-            isNotRestricted = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+            isNotRestricted =
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
 
             connectionType = when {
                 capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
@@ -174,8 +176,9 @@ class NetworkModule(
     }
 
     private fun getCellularType(): String {
-        val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
-            ?: return "unknown"
+        val telephonyManager =
+            context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+                ?: return "unknown"
 
         return when (telephonyManager.dataNetworkType) {
             TelephonyManager.NETWORK_TYPE_GPRS,

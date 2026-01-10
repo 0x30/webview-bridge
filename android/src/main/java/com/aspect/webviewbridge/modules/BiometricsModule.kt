@@ -54,18 +54,24 @@ class BiometricsModule(
     // MARK: - IsAvailable
 
     private fun isAvailable(callback: (Result<Any?>) -> Unit) {
-        val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-        val canAuthenticateWeak = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
-        
+        val canAuthenticate =
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val canAuthenticateWeak =
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+
         val isAvailable = canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS ||
-                         canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS
-        
-        callback(Result.success(mapOf(
-            "isAvailable" to isAvailable,
-            "biometryType" to getBiometryTypeString(),
-            "strongBiometrics" to (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS),
-            "weakBiometrics" to (canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS)
-        )))
+                canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS
+
+        callback(
+            Result.success(
+                mapOf(
+                    "isAvailable" to isAvailable,
+                    "biometryType" to getBiometryTypeString(),
+                    "strongBiometrics" to (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS),
+                    "weakBiometrics" to (canAuthenticateWeak == BiometricManager.BIOMETRIC_SUCCESS)
+                )
+            )
+        )
     }
 
     // MARK: - GetBiometryType
@@ -80,10 +86,14 @@ class BiometricsModule(
             else -> "无"
         }
 
-        callback(Result.success(mapOf(
-            "type" to type,
-            "displayName" to displayName
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "type" to type,
+                    "displayName" to displayName
+                )
+            )
+        )
     }
 
     // MARK: - Authenticate
@@ -134,23 +144,23 @@ class BiometricsModule(
             val executor = ContextCompat.getMainExecutor(context)
             val biometricPrompt = BiometricPrompt(activity, executor, authCallback)
 
-                val promptInfoBuilder = BiometricPrompt.PromptInfo.Builder()
-                    .setTitle(title)
-                    .setDescription(description)
+            val promptInfoBuilder = BiometricPrompt.PromptInfo.Builder()
+                .setTitle(title)
+                .setDescription(description)
 
-                if (subtitle.isNotEmpty()) {
-                    promptInfoBuilder.setSubtitle(subtitle)
-                }
+            if (subtitle.isNotEmpty()) {
+                promptInfoBuilder.setSubtitle(subtitle)
+            }
 
-                if (allowDeviceCredential) {
-                    promptInfoBuilder.setAllowedAuthenticators(
-                        BiometricManager.Authenticators.BIOMETRIC_STRONG or
-                        BiometricManager.Authenticators.DEVICE_CREDENTIAL
-                    )
-                } else {
-                    promptInfoBuilder.setNegativeButtonText(negativeButtonText)
-                    promptInfoBuilder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-                }
+            if (allowDeviceCredential) {
+                promptInfoBuilder.setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                )
+            } else {
+                promptInfoBuilder.setNegativeButtonText(negativeButtonText)
+                promptInfoBuilder.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+            }
 
             val promptInfo = promptInfoBuilder.build()
             biometricPrompt.authenticate(promptInfo)
@@ -160,10 +170,11 @@ class BiometricsModule(
     // MARK: - CheckEnrollment
 
     private fun checkEnrollment(callback: (Result<Any?>) -> Unit) {
-        val canAuthenticate = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
-        
+        val canAuthenticate =
+            biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+
         val isEnrolled = canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS
-        
+
         val reason = when (canAuthenticate) {
             BiometricManager.BIOMETRIC_SUCCESS -> "enrolled"
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> "noHardware"
@@ -175,17 +186,22 @@ class BiometricsModule(
             else -> "unknown"
         }
 
-        callback(Result.success(mapOf(
-            "isEnrolled" to isEnrolled,
-            "biometryType" to getBiometryTypeString(),
-            "reason" to reason
-        )))
+        callback(
+            Result.success(
+                mapOf(
+                    "isEnrolled" to isEnrolled,
+                    "biometryType" to getBiometryTypeString(),
+                    "reason" to reason
+                )
+            )
+        )
     }
 
     // MARK: - 辅助方法
 
     private fun getBiometryTypeString(): String {
-        val hasFingerprint = context.packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
+        val hasFingerprint =
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
         val hasFace = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             context.packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)
         } else false

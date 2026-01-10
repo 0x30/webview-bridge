@@ -37,7 +37,8 @@ import java.util.*
  */
 class MediaModule(
     private val context: Context,
-    private val bridgeContext: BridgeModuleContext
+    private val bridgeContext: BridgeModuleContext,
+    private val activityProvider: () -> Activity?
 ) : BridgeModule {
     
     override val moduleName = "Media"

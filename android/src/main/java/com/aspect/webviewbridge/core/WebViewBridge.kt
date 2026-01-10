@@ -156,9 +156,9 @@ class WebViewBridge(
         registerModule(SystemModule(context, this))
         registerModule(StorageModule(context, this))
         registerModule(BiometricsModule(context, this, activityProvider))
-        registerModule(ContactsModule(context, this))
+        registerModule(ContactsModule(context, this, activityProvider))
         registerModule(LocationModule(context, this))
-        registerModule(MediaModule(context, this))
+        registerModule(MediaModule(context, this, activityProvider))
         registerModule(NetworkModule(context, this))
         registerModule(NFCModule(context, this, activityProvider))
     }

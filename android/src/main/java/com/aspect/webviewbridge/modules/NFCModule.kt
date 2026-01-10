@@ -25,6 +25,7 @@ import com.aspect.webviewbridge.protocol.BridgeModuleContext
 import com.aspect.webviewbridge.protocol.BridgeRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.json.JSONObject
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.nio.charset.Charset
@@ -74,50 +75,57 @@ class NFCModule(
 
     // MARK: - IsAvailable
 
-    private fun isAvailable(): Map<String, Any> {
+    private fun isAvailable(callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
-        return mapOf(
+        callback(Result.success(mapOf(
             "isAvailable" to (adapter != null),
             "ndefSupported" to (adapter != null),
             "tagSupported" to (adapter != null)
-        )
+        )))
     }
 
     // MARK: - IsEnabled
 
-    private fun isEnabled(): Map<String, Boolean> {
-        return mapOf(
+    private fun isEnabled(callback: (Result<Any?>) -> Unit) {
+        callback(Result.success(mapOf(
             "isEnabled" to (nfcAdapter?.isEnabled == true)
-        )
+        )))
     }
 
     // MARK: - StartScan
 
-    private fun startScan(params: JSONObject): Map<String, Any> {
+    private fun startScan(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
-            ?: throw BridgeError(BridgeErrorCode.FeatureDisabled, "NFC 不可用")
+        if (adapter == null) {
+            callback(Result.failure(BridgeError.featureDisabled("NFC 不可用")))
+            return
+        }
 
         if (!adapter.isEnabled) {
-            throw BridgeError(BridgeErrorCode.FeatureDisabled, "NFC 未开启")
+            callback(Result.failure(BridgeError.featureDisabled("NFC 未开启")))
+            return
         }
 
         val activity = activityProvider()
-            ?: throw BridgeError(BridgeErrorCode.InternalError, "无法获取 Activity")
+        if (activity == null) {
+            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
+            return
+        }
 
         isWriteMode = false
         isScanning = true
 
         enableForegroundDispatch(activity)
 
-        return mapOf(
+        callback(Result.success(mapOf(
             "scanning" to true,
             "message" to "NFC 扫描已启动"
-        )
+        )))
     }
 
     // MARK: - StopScan
 
-    private fun stopScan(): Map<String, Boolean> {
+    private fun stopScan(callback: (Result<Any?>) -> Unit) {
         isScanning = false
         isWriteMode = false
         pendingWriteMessage = null
@@ -130,45 +138,45 @@ class NFCModule(
             }
         }
 
-        return mapOf("stopped" to true)
+        callback(Result.success(mapOf("stopped" to true)))
     }
 
     // MARK: - WriteTag
 
-    private fun writeTag(params: JSONObject): Map<String, Any> {
+    private fun writeTag(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
         val adapter = nfcAdapter
-            ?: throw BridgeError(BridgeErrorCode.FeatureDisabled, "NFC 不可用")
+        if (adapter == null) {
+            callback(Result.failure(BridgeError.featureDisabled("NFC 不可用")))
+            return
+        }
 
         if (!adapter.isEnabled) {
-            throw BridgeError(BridgeErrorCode.FeatureDisabled, "NFC 未开启")
+            callback(Result.failure(BridgeError.featureDisabled("NFC 未开启")))
+            return
         }
 
         val activity = activityProvider()
-            ?: throw BridgeError(BridgeErrorCode.InternalError, "无法获取 Activity")
+        if (activity == null) {
+            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
+            return
+        }
 
         // 构建 NDEF 消息
         val records = mutableListOf<NdefRecord>()
 
         // 写入文本
-        params.optString("text", "").takeIf { it.isNotEmpty() }?.let { text ->
+        request.getString("text")?.takeIf { it.isNotEmpty() }?.let { text ->
             records.add(createTextRecord(text))
         }
 
         // 写入 URI
-        params.optString("uri", "").takeIf { it.isNotEmpty() }?.let { uri ->
+        request.getString("uri")?.takeIf { it.isNotEmpty() }?.let { uri ->
             records.add(NdefRecord.createUri(uri))
         }
 
-        // 写入自定义记录
-        params.optJSONArray("records")?.let { recordsArray ->
-            for (i in 0 until recordsArray.length()) {
-                val record = recordsArray.getJSONObject(i)
-                createNdefRecord(record)?.let { records.add(it) }
-            }
-        }
-
         if (records.isEmpty()) {
-            throw BridgeError(BridgeErrorCode.InvalidParams, "text/uri/records")
+            callback(Result.failure(BridgeError.invalidParams("text/uri/records")))
+            return
         }
 
         pendingWriteMessage = NdefMessage(records.toTypedArray())
@@ -177,20 +185,20 @@ class NFCModule(
 
         enableForegroundDispatch(activity)
 
-        return mapOf(
+        callback(Result.success(mapOf(
             "ready" to true,
             "message" to "请将设备靠近 NFC 标签以写入"
-        )
+        )))
     }
 
     // MARK: - OpenSettings
 
-    private fun openSettings(): Map<String, Boolean> {
+    private fun openSettings(callback: (Result<Any?>) -> Unit) {
         val intent = Intent(Settings.ACTION_NFC_SETTINGS).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
-        return mapOf("opened" to true)
+        callback(Result.success(mapOf("opened" to true)))
     }
 
     // MARK: - 前台调度
@@ -275,18 +283,22 @@ class NFCModule(
                     val records = parseNdefMessage(message)
 
                     scope.launch {
-                        bridgeContext.sendEvent("NFC.TagDetected", mapOf(
-                            "records" to records,
-                            "capacity" to ndef.maxSize,
-                            "isWritable" to ndef.isWritable
-                        )))
+                        bridgeContext.sendEvent(
+                            "NFC.TagDetected", mapOf(
+                                "records" to records,
+                                "capacity" to ndef.maxSize,
+                                "isWritable" to ndef.isWritable
+                            )
+                        )
                     }
                 }
             } catch (e: Exception) {
                 scope.launch {
-                    bridgeContext.sendEvent("NFC.Error", mapOf(
-                        "error" to (e.message ?: "读取失败")
-                    )))
+                    bridgeContext.sendEvent(
+                        "NFC.Error", mapOf(
+                            "error" to (e.message ?: "读取失败")
+                        )
+                    )
                 }
             } finally {
                 try {
@@ -298,7 +310,10 @@ class NFCModule(
         } else {
             // 尝试从 Intent 读取
             val messages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES, NdefMessage::class.java)
+                intent.getParcelableArrayExtra(
+                    NfcAdapter.EXTRA_NDEF_MESSAGES,
+                    NdefMessage::class.java
+                )
             } else {
                 @Suppress("DEPRECATION")
                 intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)
@@ -311,9 +326,11 @@ class NFCModule(
                 }
 
                 scope.launch {
-                    bridgeContext.sendEvent("NFC.TagDetected", mapOf(
-                        "records" to allRecords
-                    ))
+                    bridgeContext.sendEvent(
+                        "NFC.TagDetected", mapOf(
+                            "records" to allRecords
+                        )
+                    )
                 }
             }
         }
@@ -342,10 +359,12 @@ class NFCModule(
                 ndef.writeNdefMessage(message)
 
                 scope.launch {
-                    bridgeContext.sendEvent("NFC.WriteSuccess", mapOf(
-                        "success" to true,
-                        "capacity" to ndef.maxSize
-                    ))
+                    bridgeContext.sendEvent(
+                        "NFC.WriteSuccess", mapOf(
+                            "success" to true,
+                            "capacity" to ndef.maxSize
+                        )
+                    )
                 }
 
                 // 写入成功后重置状态
@@ -370,10 +389,12 @@ class NFCModule(
                     formatable.format(message)
 
                     scope.launch {
-                        bridgeContext.sendEvent("NFC.WriteSuccess", mapOf(
-                            "success" to true,
-                            "formatted" to true
-                        )))
+                        bridgeContext.sendEvent(
+                            "NFC.WriteSuccess", mapOf(
+                                "success" to true,
+                                "formatted" to true
+                            )
+                        )
                     }
 
                     isWriteMode = false
@@ -396,10 +417,12 @@ class NFCModule(
 
     private fun sendWriteError(message: String) {
         scope.launch {
-            bridgeContext.sendEvent("NFC.WriteError", mapOf(
-                "success" to false,
-                "error" to message
-            )))
+            bridgeContext.sendEvent(
+                "NFC.WriteError", mapOf(
+                    "success" to false,
+                    "error" to message
+                )
+            )
         }
     }
 
@@ -441,12 +464,16 @@ class NFCModule(
                 "tnf" to tnfString(record.tnf),
                 "type" to String(record.type, Charset.forName("UTF-8")),
                 "id" to String(record.id, Charset.forName("UTF-8")),
-                "payload" to android.util.Base64.encodeToString(record.payload, android.util.Base64.NO_WRAP)
+                "payload" to android.util.Base64.encodeToString(
+                    record.payload,
+                    android.util.Base64.NO_WRAP
+                )
             )
 
             // 解析文本
             if (record.tnf == NdefRecord.TNF_WELL_KNOWN &&
-                record.type.contentEquals(NdefRecord.RTD_TEXT)) {
+                record.type.contentEquals(NdefRecord.RTD_TEXT)
+            ) {
                 parseTextRecord(record)?.let { text ->
                     info["text"] = text
                 }
@@ -454,7 +481,8 @@ class NFCModule(
 
             // 解析 URI
             if (record.tnf == NdefRecord.TNF_WELL_KNOWN &&
-                record.type.contentEquals(NdefRecord.RTD_URI)) {
+                record.type.contentEquals(NdefRecord.RTD_URI)
+            ) {
                 val uri = record.toUri()
                 info["uri"] = uri?.toString()
             }

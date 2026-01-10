@@ -42,9 +42,9 @@ class HapticsModule(
     private val context: Context,
     private val bridgeContext: BridgeModuleContext
 ) : BridgeModule {
-    
+
     override val moduleName = "Haptics"
-    
+
     override val methods = listOf(
         "Impact",
         "Notification",
@@ -52,17 +52,18 @@ class HapticsModule(
         "Vibrate",
         "IsSupported"
     )
-    
+
     private val vibrator: Vibrator by lazy {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            val vibratorManager =
+                context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
             vibratorManager.defaultVibrator
         } else {
             @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         }
     }
-    
+
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
@@ -77,9 +78,9 @@ class HapticsModule(
             else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
     }
-    
+
     // MARK: - Impact
-    
+
     private fun impact(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
@@ -90,10 +91,10 @@ class HapticsModule(
         } catch (e: Exception) {
             ImpactStyle.MEDIUM
         }
-        
+
         val intensity = request.getDouble("intensity") ?: 1.0
         val amplitude = (style.amplitude * intensity).toInt().coerceIn(1, 255)
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val effect = VibrationEffect.createOneShot(
                 getDurationForStyle(style),
@@ -104,12 +105,12 @@ class HapticsModule(
             @Suppress("DEPRECATION")
             vibrator.vibrate(getDurationForStyle(style))
         }
-        
+
         callback(Result.success(null))
     }
-    
+
     // MARK: - Notification
-    
+
     private fun notification(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
@@ -120,20 +121,20 @@ class HapticsModule(
         } catch (e: Exception) {
             NotificationFeedbackType.SUCCESS
         }
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val pattern = when (type) {
                 NotificationFeedbackType.SUCCESS -> longArrayOf(0, 50, 50, 50)
                 NotificationFeedbackType.WARNING -> longArrayOf(0, 100, 100, 100)
                 NotificationFeedbackType.ERROR -> longArrayOf(0, 100, 50, 100, 50, 100)
             }
-            
+
             val amplitudes = when (type) {
                 NotificationFeedbackType.SUCCESS -> intArrayOf(0, 128, 0, 255)
                 NotificationFeedbackType.WARNING -> intArrayOf(0, 200, 0, 200)
                 NotificationFeedbackType.ERROR -> intArrayOf(0, 255, 0, 255, 0, 255)
             }
-            
+
             val effect = VibrationEffect.createWaveform(pattern, amplitudes, -1)
             vibrator.vibrate(effect)
         } else {
@@ -145,12 +146,12 @@ class HapticsModule(
             @Suppress("DEPRECATION")
             vibrator.vibrate(pattern, -1)
         }
-        
+
         callback(Result.success(null))
     }
-    
+
     // MARK: - Selection
-    
+
     private fun selection(callback: (Result<Any?>) -> Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
@@ -162,45 +163,45 @@ class HapticsModule(
             @Suppress("DEPRECATION")
             vibrator.vibrate(10)
         }
-        
+
         callback(Result.success(null))
     }
-    
+
     // MARK: - Vibrate
-    
+
     private fun vibrate(
         request: BridgeRequest,
         callback: (Result<Any?>) -> Unit
     ) {
-        val pattern = request.getArray("pattern")?.map { 
-            it.asLong 
+        val pattern = request.getArray("pattern")?.map {
+            it.asLong
         }?.toLongArray() ?: longArrayOf(100)
-        
+
         // 确保模式以 0 开始（延迟为 0）
         val fullPattern = if (pattern.isNotEmpty() && pattern[0] != 0L) {
             longArrayOf(0) + pattern
         } else {
             pattern
         }
-        
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // 创建振幅数组
             val amplitudes = IntArray(fullPattern.size) { index ->
                 if (index % 2 == 0) 0 else 255
             }
-            
+
             val effect = VibrationEffect.createWaveform(fullPattern, amplitudes, -1)
             vibrator.vibrate(effect)
         } else {
             @Suppress("DEPRECATION")
             vibrator.vibrate(fullPattern, -1)
         }
-        
+
         callback(Result.success(null))
     }
-    
+
     // MARK: - IsSupported
-    
+
     private fun isSupported(callback: (Result<Any?>) -> Unit) {
         val hasVibrator = vibrator.hasVibrator()
         val hasAmplitudeControl = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -208,18 +209,22 @@ class HapticsModule(
         } else {
             false
         }
-        
-        callback(Result.success(mapOf(
-            "supported" to hasVibrator,
-            "impactSupported" to hasVibrator,
-            "notificationSupported" to hasVibrator,
-            "selectionSupported" to hasVibrator,
-            "hasAmplitudeControl" to hasAmplitudeControl
-        )))
+
+        callback(
+            Result.success(
+                mapOf(
+                    "supported" to hasVibrator,
+                    "impactSupported" to hasVibrator,
+                    "notificationSupported" to hasVibrator,
+                    "selectionSupported" to hasVibrator,
+                    "hasAmplitudeControl" to hasAmplitudeControl
+                )
+            )
+        )
     }
-    
+
     // MARK: - 辅助方法
-    
+
     private fun getDurationForStyle(style: ImpactStyle): Long {
         return when (style) {
             ImpactStyle.LIGHT -> 20L
