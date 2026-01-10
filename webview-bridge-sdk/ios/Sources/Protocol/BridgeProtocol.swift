@@ -238,6 +238,11 @@ public struct AnyCodable: Codable {
         return value as? Bool
     }
     
+    /// 获取浮点值
+    public var doubleValue: Double? {
+        return value as? Double
+    }
+    
     /// 获取字典值
     public var dictionaryValue: [String: Any]? {
         return value as? [String: Any]

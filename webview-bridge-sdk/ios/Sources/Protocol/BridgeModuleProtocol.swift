@@ -46,7 +46,8 @@ public protocol BridgeModuleContext: AnyObject {
     func sendEvent(_ event: BridgeEvent)
     
     /// 获取当前 WebView（如果需要）
-    var webView: Any? { get }
+    /// 使用 Any 以避免对具体 WebView 类型的强绑定
+    var webViewInstance: Any? { get }
 }
 
 // MARK: - 可配置模块

@@ -187,7 +187,7 @@ public class UserModule: BridgeModule {
 /// 分析事件
 public struct AnalyticsEvent: Codable {
     public var event: String
-    public var properties: [String: AnyCodable]?
+    public var properties: [String: Any]?
     public var timestamp: Double?
 }
 
@@ -204,7 +204,7 @@ public class AnalyticsModule: BridgeModule {
     // 事件缓存
     private var eventBuffer: [AnalyticsEvent] = []
     private var userId: String?
-    private var userProperties: [String: AnyCodable] = [:]
+    private var userProperties: [String: Any] = [:]
     
     public init(bridge: WebViewBridge) {
         self.bridge = bridge
@@ -247,7 +247,7 @@ public class AnalyticsModule: BridgeModule {
         let event = AnalyticsEvent(
             event: eventName,
             properties: params["properties"]?.dictionaryValue,
-            timestamp: params["timestamp"]?.doubleValue ?? Date().timeIntervalSince1970 * 1000
+            timestamp: (params["timestamp"]?.doubleValue) ?? Date().timeIntervalSince1970 * 1000
         )
         
         eventBuffer.append(event)
@@ -307,16 +307,4 @@ private extension Encodable {
     }
 }
 
-private extension AnyCodable {
-    var stringValue: String? {
-        return value as? String
-    }
-    
-    var doubleValue: Double? {
-        return value as? Double
-    }
-    
-    var dictionaryValue: [String: AnyCodable]? {
-        return value as? [String: AnyCodable]
-    }
-}
+// 使用核心定义的 AnyCodable 辅助属性 (stringValue/intValue/boolValue/doubleValue/dictionaryValue)
