@@ -44,8 +44,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        working-directory: docs-site
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build docs
         working-directory: docs-site
