@@ -2,6 +2,10 @@
 
 联系人模块，提供读取、选择和创建联系人功能。
 
+:::tip 权限管理
+联系人权限的查看和请求已统一到 [Permission 模块](/api/modules/permission)。请使用 `Permission.getStatus('contacts')` 和 `Permission.request('contacts')` 来管理权限。
+:::
+
 ## 访问方式
 
 ```typescript
@@ -11,35 +15,6 @@ Bridge.contacts.getContacts()
 ```
 
 ## 方法
-
-### hasPermission()
-
-检查通讯录权限。
-
-```typescript
-const result = await Bridge.contacts.hasPermission()
-```
-
-**返回值** `Promise<PermissionResult>`
-
-```typescript
-interface PermissionResult {
-  /** 是否已授权 */
-  granted: boolean
-  /** 权限状态 */
-  status: 'authorized' | 'denied' | 'restricted' | 'notDetermined' | 'unknown'
-}
-```
-
-### requestPermission()
-
-请求通讯录权限。
-
-```typescript
-const result = await Bridge.contacts.requestPermission()
-```
-
-**返回值** `Promise<PermissionResult>`
 
 ### getContacts()
 
@@ -221,12 +196,12 @@ if (result.success) {
 
 ```typescript
 async function contactsDemo() {
-  // 1. 检查权限
-  const permission = await Bridge.contacts.hasPermission()
+  // 1. 检查并请求联系人权限（使用 Permission 模块）
+  const status = await Bridge.permission.getStatus('contacts')
   
-  if (!permission.granted) {
-    const request = await Bridge.contacts.requestPermission()
-    if (!request.granted) {
+  if (status.status !== 'granted') {
+    const result = await Bridge.permission.request('contacts')
+    if (result.status !== 'granted') {
       alert('需要通讯录权限才能继续')
       return
     }

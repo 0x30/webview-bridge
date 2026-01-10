@@ -133,25 +133,9 @@ export class ContactsModule implements BridgeModule {
     'PickContact',
     'GetContact',
     'CreateContact',
-    'HasPermission',
-    'RequestPermission',
   ] as const
 
   constructor(private bridge: BridgeCore) {}
-
-  /**
-   * 检查通讯录权限
-   */
-  async hasPermission(): Promise<PermissionResult> {
-    return this.bridge.send<PermissionResult>('Contacts.HasPermission')
-  }
-
-  /**
-   * 请求通讯录权限
-   */
-  async requestPermission(): Promise<PermissionResult> {
-    return this.bridge.send<PermissionResult>('Contacts.RequestPermission')
-  }
 
   /**
    * 获取联系人列表

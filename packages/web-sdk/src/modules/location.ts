@@ -119,9 +119,6 @@ export class LocationModule implements BridgeModule {
     'GetCurrentPosition',
     'WatchPosition',
     'ClearWatch',
-    'HasPermission',
-    'RequestPermission',
-    'GetPermissionStatus',
     'OpenSettings',
     'Geocode',
     'ReverseGeocode',
@@ -139,18 +136,6 @@ export class LocationModule implements BridgeModule {
         this.watchCallbacks.get(data.watchId)?.(data)
       }
     })
-  }
-
-  async hasPermission(): Promise<PermissionResult> {
-    return this.bridge.send<PermissionResult>('Location.HasPermission')
-  }
-
-  async requestPermission(params?: RequestPermissionParams): Promise<PermissionResult> {
-    return this.bridge.send<PermissionResult>('Location.RequestPermission', params as Record<string, unknown>)
-  }
-
-  async getPermissionStatus(): Promise<PermissionStatusResult> {
-    return this.bridge.send<PermissionStatusResult>('Location.GetPermissionStatus')
   }
 
   async openSettings(): Promise<{ opened: boolean }> {

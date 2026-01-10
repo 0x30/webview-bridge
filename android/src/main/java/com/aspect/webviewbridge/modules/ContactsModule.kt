@@ -37,9 +37,7 @@ class ContactsModule(
         "GetContacts",
         "PickContact",
         "GetContact",
-        "CreateContact",
-        "HasPermission",
-        "RequestPermission"
+        "CreateContact"
     )
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -54,58 +52,7 @@ class ContactsModule(
             "PickContact" -> pickContact(callback)
             "GetContact" -> getContact(request, callback)
             "CreateContact" -> createContact(request, callback)
-            "HasPermission" -> hasPermission(callback)
-            "RequestPermission" -> requestPermission(callback)
             else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
-        }
-    }
-
-    // MARK: - HasPermission
-
-    private fun hasPermission(callback: (Result<Any?>) -> Unit) {
-        val readGranted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.READ_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val writeGranted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.WRITE_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-
-        callback(
-            Result.success(
-                mapOf(
-                    "granted" to readGranted,
-                    "readGranted" to readGranted,
-                    "writeGranted" to writeGranted,
-                    "status" to if (readGranted) "authorized" else "denied"
-                )
-            )
-        )
-    }
-
-    // MARK: - RequestPermission
-
-    private fun requestPermission(callback: (Result<Any?>) -> Unit) {
-        val activity = activityProvider()
-        if (activity == null) {
-            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
-            return
-        }
-
-        ActivityCompat.requestPermissions(
-            activity,
-            arrayOf(
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.WRITE_CONTACTS
-            ),
-            REQUEST_CONTACTS_PERMISSION
-        )
-
-        // 注意：实际实现需要通过 onRequestPermissionsResult 回调
-        // 这里简化为检查当前状态
-        scope.launch {
-            delay(500)
-            hasPermission(callback)
         }
     }
 

@@ -2,6 +2,13 @@
 
 媒体模块，提供相机拍照、录像、相册选择等功能。
 
+:::tip 权限管理
+媒体相关权限（相机、相册、麦克风）的查看和请求已统一到 [Permission 模块](/api/modules/permission)。请使用：
+- `Permission.getStatus('camera')` / `Permission.request('camera')` - 相机权限
+- `Permission.getStatus('photos')` / `Permission.request('photos')` - 相册权限
+- `Permission.getStatus('microphone')` / `Permission.request('microphone')` - 麦克风权限
+:::
+
 ## 访问方式
 
 ```typescript
@@ -11,32 +18,6 @@ Bridge.media.takePhoto()
 ```
 
 ## 方法
-
-### hasPermission()
-
-检查媒体相关权限。
-
-```typescript
-const result = await Bridge.media.hasPermission(type)
-```
-
-**参数**
-
-| 参数 | 类型 | 描述 |
-|------|------|------|
-| type | `MediaPermissionType` | 权限类型 |
-
-```typescript
-type MediaPermissionType = 'camera' | 'photos' | 'microphone' | 'storage'
-```
-
-### requestPermission()
-
-请求媒体相关权限。
-
-```typescript
-const result = await Bridge.media.requestPermission(type)
-```
 
 ### takePhoto()
 
@@ -277,18 +258,19 @@ if (result.success) {
 
 ```typescript
 async function mediaDemo() {
-  // 1. 检查权限
-  const [cameraPermission, photosPermission] = await Promise.all([
-    Bridge.media.hasPermission('camera'),
-    Bridge.media.hasPermission('photos')
-  ])
-
-  if (!cameraPermission.granted) {
-    await Bridge.media.requestPermission('camera')
+  // 1. 检查并请求权限（使用 Permission 模块）
+  const cameraStatus = await Bridge.permission.getStatus('camera')
+  if (cameraStatus.status !== 'granted') {
+    const result = await Bridge.permission.request('camera')
+    if (result.status !== 'granted') {
+      alert('需要相机权限')
+      return
+    }
   }
 
-  if (!photosPermission.granted) {
-    await Bridge.media.requestPermission('photos')
+  const photosStatus = await Bridge.permission.getStatus('photos')
+  if (photosStatus.status !== 'granted') {
+    await Bridge.permission.request('photos')
   }
 
   // 2. 拍照

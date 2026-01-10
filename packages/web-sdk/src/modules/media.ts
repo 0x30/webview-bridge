@@ -197,27 +197,9 @@ export class MediaModule implements BridgeModule {
     'GetAlbums',
     'GetPhotos',
     'SaveToAlbum',
-    'HasPermission',
-    'RequestPermission',
   ] as const
 
   constructor(private bridge: BridgeCore) {}
-
-  /**
-   * 检查媒体权限
-   * @param type 权限类型
-   */
-  async hasPermission(type: MediaPermissionType = 'photos'): Promise<MediaPermissionResult> {
-    return this.bridge.send<MediaPermissionResult>('Media.HasPermission', { type })
-  }
-
-  /**
-   * 请求媒体权限
-   * @param type 权限类型
-   */
-  async requestPermission(type: MediaPermissionType = 'photos'): Promise<MediaPermissionResult> {
-    return this.bridge.send<MediaPermissionResult>('Media.RequestPermission', { type })
-  }
 
   /**
    * 拍照

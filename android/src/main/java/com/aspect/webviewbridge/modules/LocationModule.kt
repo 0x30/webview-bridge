@@ -46,9 +46,6 @@ class LocationModule(
         "GetCurrentPosition",
         "WatchPosition",
         "ClearWatch",
-        "HasPermission",
-        "RequestPermission",
-        "GetPermissionStatus",
         "OpenSettings",
         "Geocode",
         "ReverseGeocode"
@@ -71,86 +68,11 @@ class LocationModule(
             "GetCurrentPosition" -> getCurrentPosition(request, callback)
             "WatchPosition" -> watchPosition(request, callback)
             "ClearWatch" -> clearWatch(request, callback)
-            "HasPermission" -> hasPermission(callback)
-            "RequestPermission" -> requestPermission(request, callback)
-            "GetPermissionStatus" -> getPermissionStatus(callback)
             "OpenSettings" -> openSettings(callback)
             "Geocode" -> geocode(request, callback)
             "ReverseGeocode" -> reverseGeocode(request, callback)
             else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
         }
-    }
-
-    // MARK: - HasPermission
-
-    private fun hasPermission(callback: (Result<Any?>) -> Unit) {
-        val fineGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        callback(Result.success(mapOf(
-            "granted" to (fineGranted || coarseGranted),
-            "fineLocation" to fineGranted,
-            "coarseLocation" to coarseGranted
-        )))
-    }
-
-    // MARK: - RequestPermission
-
-    private fun requestPermission(request: BridgeRequest, callback: (Result<Any?>) -> Unit) {
-        val accuracy = request.getString("accuracy") ?: "high"
-
-        val permissions = mutableListOf<String>()
-        if (accuracy == "high") {
-            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-
-        // 权限请求需要通过 Activity 进行
-        // 返回当前状态，实际权限请求需要由客户端实现
-        callback(Result.success(mapOf(
-            "message" to "请在应用层调用 ActivityCompat.requestPermissions",
-            "permissions" to permissions,
-            "currentStatus" to getCurrentPermissionStatus()
-        )))
-    }
-
-    // MARK: - GetPermissionStatus
-    
-    private fun getPermissionStatus(callback: (Result<Any?>) -> Unit) {
-        callback(Result.success(getCurrentPermissionStatus()))
-    }
-    
-    private fun getCurrentPermissionStatus(): Map<String, Any> {
-        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        
-        val fineGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        val coarseGranted = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        return mapOf(
-            "permissions" to mapOf(
-                "granted" to (fineGranted || coarseGranted),
-                "fineLocation" to fineGranted,
-                "coarseLocation" to coarseGranted
-            ),
-            "isLocationEnabled" to (isGpsEnabled || isNetworkEnabled),
-            "isGpsEnabled" to isGpsEnabled,
-            "isNetworkEnabled" to isNetworkEnabled
-        )
     }
 
     // MARK: - OpenSettings

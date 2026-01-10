@@ -2,6 +2,10 @@
 
 位置服务模块，提供获取位置、位置监听、地理编码等功能。
 
+:::tip 权限管理
+位置权限的查看和请求已统一到 [Permission 模块](/api/modules/permission)。请使用 `Permission.getStatus('locationWhenInUse')` 和 `Permission.request('locationWhenInUse')` 来管理权限。
+:::
+
 ## 访问方式
 
 ```typescript
@@ -11,50 +15,6 @@ Bridge.location.getCurrentPosition()
 ```
 
 ## 方法
-
-### hasPermission()
-
-检查位置权限。
-
-```typescript
-const result = await Bridge.location.hasPermission()
-```
-
-### requestPermission()
-
-请求位置权限。
-
-```typescript
-const result = await Bridge.location.requestPermission(params?)
-```
-
-**参数**
-
-```typescript
-interface RequestPermissionParams {
-  /** 权限类型 */
-  type?: 'whenInUse' | 'always'
-}
-```
-
-### getPermissionStatus()
-
-获取详细的权限状态。
-
-```typescript
-const status = await Bridge.location.getPermissionStatus()
-```
-
-**返回值**
-
-```typescript
-interface PermissionStatusResult {
-  /** 权限状态 */
-  status: string
-  /** 位置服务是否已启用 */
-  isLocationServicesEnabled: boolean
-}
-```
 
 ### getCurrentPosition()
 
@@ -281,14 +241,12 @@ remove()
 
 ```typescript
 async function locationDemo() {
-  // 1. 检查权限
-  const permission = await Bridge.location.hasPermission()
+  // 1. 检查并请求位置权限（使用 Permission 模块）
+  const status = await Bridge.permission.getStatus('locationWhenInUse')
   
-  if (!permission.granted) {
-    const result = await Bridge.location.requestPermission({
-      type: 'whenInUse'
-    })
-    if (!result.granted) {
+  if (status.status !== 'granted') {
+    const result = await Bridge.permission.request('locationWhenInUse')
+    if (result.status !== 'granted') {
       alert('需要位置权限')
       return
     }

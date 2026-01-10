@@ -51,9 +51,7 @@ class MediaModule(
         "PickMedia",
         "GetAlbums",
         "GetPhotos",
-        "SaveToAlbum",
-        "HasPermission",
-        "RequestPermission"
+        "SaveToAlbum"
     )
     
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -74,89 +72,7 @@ class MediaModule(
             "GetAlbums" -> getAlbums(callback)
             "GetPhotos" -> getPhotos(request, callback)
             "SaveToAlbum" -> saveToAlbum(request, callback)
-            "HasPermission" -> hasPermission(request, callback)
-            "RequestPermission" -> requestPermission(request, callback)
             else -> callback(Result.failure(BridgeError.methodNotFound("$moduleName.$method")))
-        }
-    }
-    
-    // MARK: - HasPermission
-    
-    private fun hasPermission(
-        request: BridgeRequest,
-        callback: (Result<Any?>) -> Unit
-    ) {
-        val type = request.getString("type") ?: "storage"
-        
-        val (granted, status) = when (type) {
-            "camera" -> {
-                val g = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                g to if (g) "authorized" else "denied"
-            }
-            "storage" -> {
-                val g = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
-                } else {
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                }
-                g to if (g) "authorized" else "denied"
-            }
-            "microphone" -> {
-                val g = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                g to if (g) "authorized" else "denied"
-            }
-            else -> false to "unknown"
-        }
-        
-        callback(Result.success(mapOf(
-            "type" to type,
-            "granted" to granted,
-            "status" to status
-        )))
-    }
-    
-    // MARK: - RequestPermission
-    
-    private fun requestPermission(
-        request: BridgeRequest,
-        callback: (Result<Any?>) -> Unit
-    ) {
-        val type = request.getString("type") ?: "storage"
-        val activity = activityProvider()
-        
-        if (activity == null) {
-            callback(Result.failure(BridgeError.internalError("无法获取 Activity")))
-            return
-        }
-        
-        val permissions = when (type) {
-            "camera" -> arrayOf(Manifest.permission.CAMERA)
-            "storage" -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    arrayOf(
-                        Manifest.permission.READ_MEDIA_IMAGES,
-                        Manifest.permission.READ_MEDIA_VIDEO
-                    )
-                } else {
-                    arrayOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    )
-                }
-            }
-            "microphone" -> arrayOf(Manifest.permission.RECORD_AUDIO)
-            else -> {
-                callback(Result.failure(BridgeError.invalidParams("type")))
-                return
-            }
-        }
-        
-        ActivityCompat.requestPermissions(activity, permissions, REQUEST_MEDIA_PERMISSION)
-        
-        // 延迟检查权限状态
-        scope.launch {
-            delay(500)
-            hasPermission(request, callback)
         }
     }
     
