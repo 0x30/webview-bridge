@@ -40,11 +40,7 @@ declare global {
         }
       }
     }
-    /** Android WebView JS 接口 */
-    AndroidBridge?: {
-      postMessage: (message: string) => void
-    }
-    /** 通用 Native Bridge 接口（推荐使用） */
+    /** Native Bridge 接口（Android 默认名称） */
     NativeBridge?: {
       postMessage: (message: string) => void
     }
@@ -145,15 +141,15 @@ export class BridgeCore {
       return
     }
 
-    // Android 检查（支持两种接口名）
-    if (window.NativeBridge || window.AndroidBridge) {
+    // Android 检查
+    if (window.NativeBridge) {
       this.markReady()
       return
     }
 
     // 等待可能的延迟注入
     setTimeout(() => {
-      if (window.webkit?.messageHandlers?.bridge || window.NativeBridge || window.AndroidBridge) {
+      if (window.webkit?.messageHandlers?.bridge || window.NativeBridge) {
         this.markReady()
       }
     }, 100)
@@ -188,7 +184,7 @@ export class BridgeCore {
    * 检查是否运行在 Native 环境
    */
   isNativeEnvironment(): boolean {
-    return !!(window.webkit?.messageHandlers?.bridge || window.NativeBridge || window.AndroidBridge)
+    return !!(window.webkit?.messageHandlers?.bridge || window.NativeBridge)
   }
 
   /**
@@ -277,14 +273,9 @@ export class BridgeCore {
       return
     }
 
-    // 尝试 Android (NativeBridge 是新接口名，AndroidBridge 是旧接口名，向后兼容)
+    // 尝试 Android
     if (window.NativeBridge) {
       window.NativeBridge.postMessage(message)
-      return
-    }
-    
-    if (window.AndroidBridge) {
-      window.AndroidBridge.postMessage(message)
       return
     }
 
@@ -404,7 +395,7 @@ export class BridgeCore {
    * 清空所有待处理回调（例如页面 reload 时）
    */
   clearPendingCallbacks(): void {
-    this.pendingCallbacks.forEach((pending, callbackId) => {
+    this.pendingCallbacks.forEach((pending) => {
       clearTimeout(pending.timeout)
       pending.reject(new BridgeError(ErrorCodes.CANCELLED, '回调已清理'))
     })

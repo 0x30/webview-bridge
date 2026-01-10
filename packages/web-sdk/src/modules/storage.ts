@@ -130,7 +130,7 @@ export class StorageModule implements BridgeModule {
    * @param params 设置参数
    */
   async set(params: StorageSetParams): Promise<void> {
-    return this.bridge.send<void>('Storage.Set', params);
+    return this.bridge.send<void>('Storage.Set', params as unknown as Record<string, unknown>);
   }
 
   /**

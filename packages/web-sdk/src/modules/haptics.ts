@@ -96,7 +96,7 @@ export class HapticsModule implements BridgeModule {
    * @param options 震动选项
    */
   async vibrate(options?: VibrateOptions): Promise<void> {
-    return this.bridge.send<void>('Haptics.Vibrate', options || {});
+    return this.bridge.send<void>('Haptics.Vibrate', (options || {}) as Record<string, unknown>);
   }
 
   /**

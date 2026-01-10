@@ -41,8 +41,8 @@ export {
 export {
   ClipboardModule,
   type ClipboardContentType,
-  type ClipboardContent,
-  type ClipboardSetParams,
+  type ClipboardReadResult,
+  type ClipboardWriteParams,
   type ClipboardHasContentResult,
 } from './clipboard';
 

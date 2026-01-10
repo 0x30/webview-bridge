@@ -172,7 +172,7 @@ export class SystemModule implements BridgeModule {
    * @returns 分享结果
    */
   async share(content: ShareContent): Promise<ShareResult> {
-    return this.bridge.send<ShareResult>('System.Share', content)
+    return this.bridge.send<ShareResult>('System.Share', content as unknown as Record<string, unknown>)
   }
 
   /**
@@ -206,7 +206,7 @@ export class SystemModule implements BridgeModule {
   async openAppStore(params?: OpenAppStoreParams): Promise<OpenURLResponse> {
     return this.bridge.send<OpenURLResponse>(
       'System.OpenAppStore',
-      params ?? {}
+      (params ?? {}) as Record<string, unknown>
     )
   }
 
