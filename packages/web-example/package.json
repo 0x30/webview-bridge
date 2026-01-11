@@ -6,21 +6,23 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "build:zip": "vite build && node scripts/build-zip.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@aspect/webview-bridge": "workspace:*",
-    "vue": "^3.4.0",
-    "vant": "^4.8.0"
+    "vant": "^4.8.0",
+    "vue": "^3.4.0"
   },
   "devDependencies": {
+    "@vant/auto-import-resolver": "^1.2.1",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.0",
     "@vue/tsconfig": "^0.8.1",
+    "archiver": "^7.0.1",
+    "typescript": "^5.3.3",
     "unplugin-vue-components": "^0.26.0",
-    "@vant/auto-import-resolver": "^1.2.1"
+    "vite": "^5.0.0"
   }
 }

@@ -146,6 +146,8 @@ export interface PermissionResult {
   permission: PermissionType;
   /** 权限状态 */
   status: PermissionStatus;
+  /** 是否已授权（便捷属性，等同于 status === 'granted'） */
+  granted: boolean;
   /** 是否可以再次请求（某些平台拒绝后不可再请求） */
   canRequestAgain?: boolean;
   /** 是否应该显示权限说明（Android shouldShowRequestPermissionRationale） */

@@ -10,6 +10,11 @@ export {
   type LaunchParams,
   type AppInfo,
   type ExitResult,
+  type InstalledApp,
+  type GetInstalledAppsOptions,
+  type InstalledAppsResult,
+  type AppDetails,
+  type CanOpenURLResult,
 } from './app';
 
 // Device 模块
@@ -73,7 +78,7 @@ export {
   SystemModule,
   type OpenURLResult,
   type OpenURLResponse,
-  type CanOpenURLResult,
+  type CanOpenURLResult as SystemCanOpenURLResult,
   type ShareContentType,
   type ShareContent,
   type ShareResult,
@@ -181,3 +186,18 @@ export {
   type NetworkStatus,
   type MonitoringResult,
 } from './network';
+
+// Custom 模块（自定义模块示例）
+export {
+  CustomModule,
+  type AlertOptions,
+  type AlertResult,
+  type ConfirmOptions,
+  type ConfirmResult,
+  type PromptOptions,
+  type PromptResult,
+  type ToastOptions,
+  type LoadingOptions,
+  type ActionSheetOptions,
+  type ActionSheetResult,
+} from './custom';

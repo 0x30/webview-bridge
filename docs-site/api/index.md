@@ -69,6 +69,12 @@ import { Bridge } from '@aspect/webview-bridge'
 | [NFC](/api/modules/nfc) | `Bridge.nfc` | 近场通信 |
 | [Network](/api/modules/network) | `Bridge.network` | 网络状态监控 |
 
+### 扩展模块
+
+| 模块 | 访问路径 | 描述 |
+|------|----------|------|
+| [Custom](/api/modules/custom) | `Bridge.custom` | 自定义 UI 组件（示例模块） |
+
 ## 类型定义
 
 所有类型都可以从包中导入：

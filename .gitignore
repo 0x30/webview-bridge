@@ -31,6 +31,8 @@ out/
 .env
 .env.local
 .env.*.local
+# Generated bundle zip
+packages/web-example/public/web-bundle.zip
 
 # ==========================
 # 3. iOS / Swift

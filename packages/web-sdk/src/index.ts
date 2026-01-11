@@ -23,6 +23,7 @@ import {
   BiometricsModule,
   NFCModule,
   NetworkModule,
+  CustomModule,
 } from './modules';
 import { SystemEventName, EventDataMap } from './events';
 
@@ -99,6 +100,9 @@ class WebViewBridge {
   /** Network 模块 - 网络状态 */
   public readonly network: NetworkModule;
 
+  /** Custom 模块 - 自定义模块示例（需要 Native 端注册） */
+  public readonly custom: CustomModule;
+
   constructor(config?: BridgeConfig) {
     this.core = BridgeCore.getInstance(config);
     
@@ -117,6 +121,7 @@ class WebViewBridge {
     this.biometrics = new BiometricsModule(this.core);
     this.nfc = new NFCModule(this.core);
     this.network = new NetworkModule(this.core);
+    this.custom = new CustomModule(this.core);
   }
 
   /**
