@@ -28,6 +28,9 @@ class ViewController: UIViewController {
 
     /// Bridge 实例
     private var bridge: WebViewBridge!
+    
+    /// 本地资源加载器（用于加载解压后的 ZIP 内容）
+    private var resourceLoader: LocalResourceLoader!
 
     /// 当前加载模式
     private var loadMode: LoadMode = .remoteURL
@@ -79,6 +82,16 @@ class ViewController: UIViewController {
 
         // 允许内联播放视频
         configuration.allowsInlineMediaPlayback = true
+        
+        // 创建本地资源加载器（使用 SDK 的 LocalResourceLoader）
+        // 初始化时使用 Documents 目录，后续会在解压后更新路径
+        resourceLoader = LocalResourceLoader.fromDocuments(
+            subpath: "web-content",
+            scheme: "app",
+            host: "localhost"
+        )
+        configuration.setLocalResourceLoader(resourceLoader)
+        print("[ViewController] 注册本地资源加载器: app://localhost/")
 
         // 创建 WebView
         webView = WKWebView(frame: view.bounds, configuration: configuration)
@@ -238,14 +251,23 @@ class ViewController: UIViewController {
 
     /// 加载解压后的内容
     private func loadExtractedContent(from path: URL) {
-        // 查找 index.html（现在应该直接在根目录）
+        // 更新资源加载器的根目录
+        resourceLoader.updateRootDirectory(path)
+        
+        // 检查 index.html 是否存在
         let indexPath = path.appendingPathComponent("index.html")
-
-        if FileManager.default.fileExists(atPath: indexPath.path) {
-            webView.loadFileURL(indexPath, allowingReadAccessTo: path)
-            print("✅ 已加载: \(indexPath.path)")
-        } else {
+        guard FileManager.default.fileExists(atPath: indexPath.path) else {
             showError(title: "加载失败", message: "未找到 index.html")
+            return
+        }
+        
+        // 使用自定义 scheme 加载（app://localhost/）
+        if let url = URL(string: "app://localhost/") {
+            let request = URLRequest(url: url)
+            webView.load(request)
+            print("✅ 使用 app:// scheme 加载: \(url) -> \(path.path)")
+        } else {
+            showError(title: "加载失败", message: "无效的 URL")
         }
     }
 

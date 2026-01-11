@@ -54,8 +54,21 @@ public struct ResourceLoaderConfiguration {
 @available(iOS 11.0, *)
 public class LocalResourceLoader: NSObject, WKURLSchemeHandler {
     
-    /// 配置
-    public let configuration: ResourceLoaderConfiguration
+    /// 配置（可修改，支持动态更新路径）
+    public private(set) var configuration: ResourceLoaderConfiguration
+    
+    /// 更新资源根目录
+    /// - Parameter newRootDirectory: 新的根目录
+    public func updateRootDirectory(_ newRootDirectory: URL) {
+        configuration = ResourceLoaderConfiguration(
+            scheme: configuration.scheme,
+            host: configuration.host,
+            rootDirectory: newRootDirectory,
+            indexFileName: configuration.indexFileName,
+            allowedExtensions: configuration.allowedExtensions
+        )
+        print("[LocalResourceLoader] 更新根目录: \(newRootDirectory.path)")
+    }
     
     /// MIME 类型映射
     private let mimeTypes: [String: String] = [
