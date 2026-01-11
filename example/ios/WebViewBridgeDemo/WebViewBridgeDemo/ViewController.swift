@@ -2,6 +2,21 @@ import UIKit
 import WebKit
 import WebViewBridge
 
+/// 加载模式
+enum LoadMode: String, CaseIterable {
+    case remoteURL = "remoteURL"
+    case localAssets = "localAssets"
+    case downloadZip = "downloadZip"
+    
+    var displayName: String {
+        switch self {
+        case .remoteURL: return "远程 URL"
+        case .localAssets: return "本地资源"
+        case .downloadZip: return "下载 ZIP"
+        }
+    }
+}
+
 /// 主视图控制器
 /// 演示 WebViewBridge SDK 的使用
 class ViewController: UIViewController {
@@ -13,14 +28,33 @@ class ViewController: UIViewController {
 
     /// Bridge 实例
     private var bridge: WebViewBridge!
+    
+    /// 当前加载模式
+    private var loadMode: LoadMode = .remoteURL
+    
+    /// 远程 URL 地址
+    private let remoteURL = "http://localhost:5174"
+    
+    /// ZIP 下载地址
+    private let zipURL = "http://localhost:5174/web-bundle.zip"
+    
+    /// UserDefaults key
+    private let loadModeKey = "webview_load_mode"
 
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // 读取保存的加载模式
+        if let savedMode = UserDefaults.standard.string(forKey: loadModeKey),
+           let mode = LoadMode(rawValue: savedMode) {
+            loadMode = mode
+        }
 
         setupWebView()
         setupBridge()
+        setupLongPressGesture()
         loadContent()
     }
 
@@ -71,26 +105,95 @@ class ViewController: UIViewController {
                 allowsHTTPLoading: true
             )
         )
+        
+        // 注册自定义模块
+        let customModule = CustomModule(viewController: self)
+        bridge.registerModule(customModule)
 
         // 设置启动参数（可选）
         bridge.setLaunchParams([
             "source": "demo",
             "version": "1.0.0",
+            "loadMode": loadMode.rawValue
         ])
 
         print("✅ WebViewBridge 已初始化")
     }
+    
+    /// 设置长按手势
+    private func setupLongPressGesture() {
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
+        longPress.minimumPressDuration = 1.0
+        view.addGestureRecognizer(longPress)
+    }
+    
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        if gesture.state == .began {
+            showLoadModeSelector()
+        }
+    }
 
     /// 加载内容
     private func loadContent() {
-        // 方式一：加载本地 HTML 文件
-        // 将 example/www/index.html 复制到项目的 www 文件夹
-        //        bridge.loadLocalHTML(path: "www/index.html")
-
-        // 方式二：直接加载 URL（调试用）
-        // 如果本地文件不存在，尝试加载内嵌 HTML
-        // loadEmbeddedHTML()
-        bridge.loadURL("http://localhost:5174")
+        switch loadMode {
+        case .remoteURL:
+            print("📡 加载远程 URL: \(remoteURL)")
+            bridge.loadURL(remoteURL)
+        case .localAssets:
+            print("📦 加载本地资源")
+            if let wwwPath = Bundle.main.path(forResource: "www", ofType: nil),
+               FileManager.default.fileExists(atPath: wwwPath) {
+                bridge.loadLocalHTML(path: "www/index.html")
+            } else {
+                showError(title: "本地资源不存在", message: "请将 web-example 的 dist 目录复制到项目的 www 文件夹")
+            }
+        case .downloadZip:
+            print("⬇️ 下载 ZIP 功能需要额外实现")
+            showError(title: "提示", message: "ZIP 下载功能需要添加 SSZipArchive 依赖")
+        }
+    }
+    
+    // MARK: - Load Mode Selector
+    
+    private func showLoadModeSelector() {
+        let alert = UIAlertController(
+            title: "选择加载模式",
+            message: "当前: \(loadMode.displayName)",
+            preferredStyle: .actionSheet
+        )
+        
+        for mode in LoadMode.allCases {
+            let action = UIAlertAction(title: mode.displayName, style: .default) { [weak self] _ in
+                self?.switchLoadMode(to: mode)
+            }
+            if mode == loadMode {
+                action.setValue(true, forKey: "checked")
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        present(alert, animated: true)
+    }
+    
+    private func switchLoadMode(to mode: LoadMode) {
+        loadMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: loadModeKey)
+        setupBridge()
+        loadContent()
+    }
+    
+    private func showError(title: String, message: String?) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "确定", style: .default))
+        present(alert, animated: true)
     }
 
     /// 加载内嵌的 HTML（用于演示）
