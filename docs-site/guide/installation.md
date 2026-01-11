@@ -4,55 +4,75 @@
 
 ## Web SDK
 
-### 使用包管理器
+### 使用 Git 安装
 
 ::: code-group
 
 ```bash [pnpm]
-pnpm add @aspect/webview-bridge
+pnpm add git+https://github.com/0x30/webview-bridge.git
 ```
 
 ```bash [npm]
-npm install @aspect/webview-bridge
+npm install git+https://github.com/0x30/webview-bridge.git
 ```
 
 ```bash [yarn]
-yarn add @aspect/webview-bridge
+yarn add git+https://github.com/0x30/webview-bridge.git
 ```
 
 :::
 
-### 使用 CDN
+### 指定分支或标签
 
-```html
-<script src="https://unpkg.com/@aspect/webview-bridge/dist/index.umd.js"></script>
-<script>
-  const { Bridge } = WebViewBridge
-</script>
+```bash
+# 安装特定分支
+pnpm add git+https://github.com/0x30/webview-bridge.git#branch-name
+
+# 安装特定标签
+pnpm add git+https://github.com/0x30/webview-bridge.git#v1.2.3
 ```
 
 ## iOS SDK
 
 ### Swift Package Manager
 
-在 Xcode 中选择 File → Add Package Dependencies...，输入仓库地址：
+#### 通过 Xcode 添加
+
+1. 在 Xcode 中打开你的项目
+2. 选择 **File → Add Package Dependencies...**
+3. 输入仓库地址：
 
 ```
-https://github.com/aspect/webview-bridge-ios
+https://github.com/0x30/webview-bridge
 ```
 
-或者在 `Package.swift` 中添加：
+4. 选择版本规则（推荐使用 "Up to Next Major Version"）
+5. 点击 **Add Package**
+
+#### 通过 Package.swift 添加
+
+在你的 `Package.swift` 文件中添加依赖：
 
 ```swift
-dependencies: [
-    .package(url: "https://github.com/aspect/webview-bridge-ios", from: "1.0.0")
-]
+let package = Package(
+    name: "YourProject",
+    dependencies: [
+        .package(url: "https://github.com/0x30/webview-bridge", from: "1.0.0")
+    ],
+    targets: [
+        .target(
+            name: "YourTarget",
+            dependencies: [
+                .product(name: "WebViewBridge", package: "webview-bridge")
+            ]
+        )
+    ]
+)
 ```
 
-### 本地集成
+#### 本地开发
 
-1. 将 `ios` 目录拷贝到你的项目中
-2. 在 Xcode 中添加 package 依赖指向本地路径
+如果需要使用本地的 `ios` 目录进行开发：
 
 ```swift
 dependencies: [
@@ -70,14 +90,54 @@ dependencies: [
 
 ### Gradle
 
-在项目的 `settings.gradle.kts` 中添加模块：
+#### 1. 添加 JitPack 仓库
+
+在项目根目录的 `settings.gradle.kts` 中添加 JitPack 仓库：
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+#### 2. 添加依赖
+
+在 app 模块的 `build.gradle.kts` 中添加依赖：
+
+```kotlin
+dependencies {
+    implementation("com.github.0x30:webview-bridge:v1.2.3")
+}
+```
+
+#### 指定版本
+
+```kotlin
+// 使用特定版本
+implementation("com.github.0x30:webview-bridge:v1.2.3")
+
+// 使用最新版本（不推荐生产环境）
+implementation("com.github.0x30:webview-bridge:main-SNAPSHOT")
+
+// 使用特定 commit
+implementation("com.github.0x30:webview-bridge:commit-hash")
+```
+
+#### 本地开发
+
+如果需要使用本地的 `android` 目录进行开发，可以在 `settings.gradle.kts` 中添加：
 
 ```kotlin
 include(":webview-bridge")
 project(":webview-bridge").projectDir = file("../android")
 ```
 
-在 app 的 `build.gradle.kts` 中添加依赖：
+然后在 app 的 `build.gradle.kts` 中使用：
 
 ```kotlin
 dependencies {
