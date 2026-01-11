@@ -372,8 +372,8 @@ class MainActivity : AppCompatActivity() {
         
         setupBridge(config)
         
-        // 加载解压后的 index.html
-        val indexFile = File(filesDir, "web_bundle/www/index.html")
+        // 加载解压后的 index.html（现在直接在根目录）
+        val indexFile = File(filesDir, "web_bundle/index.html")
         if (indexFile.exists()) {
             webView.loadUrl("file://${indexFile.absolutePath}")
             android.util.Log.d(TAG, "✅ 加载解压文件: ${indexFile.absolutePath}")

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BE0ED6852F128CF5008ECA81 /* WebViewBridge in Frameworks */ = {isa = PBXBuildFile; productRef = BE0ED6842F128CF5008ECA81 /* WebViewBridge */; };
+		BE39E5C12F1379BE00900D9D /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = BE39E5C02F1379BE00900D9D /* ZIPFoundation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BE0ED6852F128CF5008ECA81 /* WebViewBridge in Frameworks */,
+				BE39E5C12F1379BE00900D9D /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +86,7 @@
 			name = WebViewBridgeDemo;
 			packageProductDependencies = (
 				BE0ED6842F128CF5008ECA81 /* WebViewBridge */,
+				BE39E5C02F1379BE00900D9D /* ZIPFoundation */,
 			);
 			productName = WebViewBridgeDemo;
 			productReference = BE0ED6512F128768008ECA81 /* WebViewBridgeDemo.app */;
@@ -115,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				BE0ED6832F128CF5008ECA81 /* XCLocalSwiftPackageReference "../../../ios" */,
+				BE39E5BF2F1379BE00900D9D /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BE0ED6522F128768008ECA81 /* Products */;
@@ -362,10 +366,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		BE39E5BF2F1379BE00900D9D /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.20;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		BE0ED6842F128CF5008ECA81 /* WebViewBridge */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WebViewBridge;
+		};
+		BE39E5C02F1379BE00900D9D /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BE39E5BF2F1379BE00900D9D /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -7,7 +7,7 @@ enum LoadMode: String, CaseIterable {
     case remoteURL = "remoteURL"
     case localAssets = "localAssets"
     case downloadZip = "downloadZip"
-    
+
     var displayName: String {
         switch self {
         case .remoteURL: return "远程 URL"
@@ -28,20 +28,20 @@ class ViewController: UIViewController {
 
     /// Bridge 实例
     private var bridge: WebViewBridge!
-    
+
     /// 当前加载模式
     private var loadMode: LoadMode = .remoteURL
-    
+
     /// 远程 URL 地址
     private let remoteURL = "http://localhost:5173"
-    
+
     /// ZIP 下载地址
     private let zipURL = "http://localhost:5173/web-bundle.zip"
-    
+
     /// UserDefaults key
     private let loadModeKey = "webview_load_mode"
     private let firstLaunchKey = "has_launched_before"
-    
+
     /// 是否首次启动
     private var isFirstLaunch: Bool {
         return !UserDefaults.standard.bool(forKey: firstLaunchKey)
@@ -52,10 +52,9 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-
         setupWebView()
         setupBridge()
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             self?.showLoadModeSelector()
         }
@@ -108,17 +107,18 @@ class ViewController: UIViewController {
                 allowsHTTPLoading: true
             )
         )
-        
+
         // 配置 Navigator 模块的导航控制器
-        PageStackManager.shared.rootNavigationController = self.navigationController
-        
+        PageStackManager.shared.rootNavigationController =
+            self.navigationController
+
         // 配置 WebView 工厂
         PageStackManager.shared.webViewConfigFactory = {
             let config = WKWebViewConfiguration()
             config.allowsInlineMediaPlayback = true
             return config
         }
-        
+
         // 注册自定义模块
         let customModule = CustomModule(viewController: self)
         bridge.register(module: customModule)
@@ -127,12 +127,12 @@ class ViewController: UIViewController {
         bridge.setLaunchParams([
             "source": "demo",
             "version": "1.0.0",
-            "loadMode": loadMode.rawValue
+            "loadMode": loadMode.rawValue,
         ])
 
         print("✅ WebViewBridge 已初始化")
     }
-    
+
     /// 加载内容
     private func loadContent() {
         switch loadMode {
@@ -142,77 +142,85 @@ class ViewController: UIViewController {
         case .localAssets:
             print("📦 加载本地资源")
             if let wwwPath = Bundle.main.path(forResource: "www", ofType: nil),
-               FileManager.default.fileExists(atPath: wwwPath) {
+                FileManager.default.fileExists(atPath: wwwPath)
+            {
                 bridge.loadLocalHTML(path: "www/index.html")
             } else {
-                showError(title: "本地资源不存在", message: "请将 web-example 的 dist 目录复制到项目的 www 文件夹")
+                showError(
+                    title: "本地资源不存在",
+                    message: "请将 web-example 的 dist 目录复制到项目的 www 文件夹"
+                )
             }
         case .downloadZip:
             print("⬇️ 下载并解压 ZIP...")
             downloadAndExtractZip()
         }
     }
-    
+
     // MARK: - ZIP 下载和解压
-    
+
     /// 下载并解压 ZIP 文件
     private func downloadAndExtractZip() {
         showLoadingIndicator()
-        
+
         guard let url = URL(string: zipURL) else {
             hideLoadingIndicator()
             showError(title: "错误", message: "无效的 ZIP URL")
             return
         }
-        
-        let task = URLSession.shared.downloadTask(with: url) { [weak self] localURL, response, error in
+
+        let task = URLSession.shared.downloadTask(with: url) {
+            [weak self] localURL, response, error in
             DispatchQueue.main.async {
                 self?.hideLoadingIndicator()
             }
-            
+
             if let error = error {
                 DispatchQueue.main.async {
-                    self?.showError(title: "下载失败", message: error.localizedDescription)
+                    self?.showError(
+                        title: "下载失败",
+                        message: error.localizedDescription
+                    )
                 }
                 return
             }
-            
+
             guard let localURL = localURL else {
                 DispatchQueue.main.async {
                     self?.showError(title: "下载失败", message: "未获取到文件")
                 }
                 return
             }
-            
+
             // 解压 ZIP
             self?.extractZip(from: localURL)
         }
-        
+
         task.resume()
     }
-    
+
     /// 解压 ZIP 文件
     private func extractZip(from zipURL: URL) {
         let fileManager = FileManager.default
-        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let documentsPath = fileManager.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        )[0]
         let extractPath = documentsPath.appendingPathComponent("web-content")
-        
+
         // 删除旧内容
         try? fileManager.removeItem(at: extractPath)
-        
+
         do {
             // 创建目标目录
-            try fileManager.createDirectory(at: extractPath, withIntermediateDirectories: true)
-            
-            // 使用 ZIPHelper 解压
-            #if targetEnvironment(simulator)
-            // 模拟器上使用系统命令（更快）
-            try ZIPHelper.unzipUsingSystemCommand(zipURL, to: extractPath)
-            #else
-            // 真机上使用纯 Swift 实现
+            try fileManager.createDirectory(
+                at: extractPath,
+                withIntermediateDirectories: true
+            )
+
+            // 使用 ZIPHelper 解压（ZIPFoundation 实现，模拟器和真机都可用）
             try ZIPHelper.unzip(zipURL, to: extractPath)
-            #endif
-            
+
             print("✅ ZIP 解压成功: \(extractPath.path)")
             DispatchQueue.main.async { [weak self] in
                 self?.loadExtractedContent(from: extractPath)
@@ -220,74 +228,68 @@ class ViewController: UIViewController {
         } catch {
             print("❌ 解压失败: \(error)")
             DispatchQueue.main.async { [weak self] in
-                self?.showError(title: "解压失败", message: error.localizedDescription)
+                self?.showError(
+                    title: "解压失败",
+                    message: error.localizedDescription
+                )
             }
         }
     }
-    
+
     /// 加载解压后的内容
     private func loadExtractedContent(from path: URL) {
-        // 查找 index.html
+        // 查找 index.html（现在应该直接在根目录）
         let indexPath = path.appendingPathComponent("index.html")
-        
+
         if FileManager.default.fileExists(atPath: indexPath.path) {
             webView.loadFileURL(indexPath, allowingReadAccessTo: path)
             print("✅ 已加载: \(indexPath.path)")
         } else {
-            // 可能在子目录中
-            if let contents = try? FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil),
-               let subdir = contents.first(where: { $0.hasDirectoryPath }) {
-                let subIndexPath = subdir.appendingPathComponent("index.html")
-                if FileManager.default.fileExists(atPath: subIndexPath.path) {
-                    webView.loadFileURL(subIndexPath, allowingReadAccessTo: subdir)
-                    print("✅ 已加载: \(subIndexPath.path)")
-                    return
-                }
-            }
             showError(title: "加载失败", message: "未找到 index.html")
         }
     }
-    
+
     /// 显示加载指示器
     private var loadingView: UIView?
-    
+
     private func showLoadingIndicator() {
         let overlay = UIView(frame: view.bounds)
         overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        
+
         let indicator = UIActivityIndicatorView(style: .large)
         indicator.color = .white
         indicator.center = overlay.center
         indicator.startAnimating()
-        
+
         let label = UILabel()
         label.text = "下载中..."
         label.textColor = .white
         label.sizeToFit()
         label.center = CGPoint(x: overlay.center.x, y: overlay.center.y + 40)
-        
+
         overlay.addSubview(indicator)
         overlay.addSubview(label)
         view.addSubview(overlay)
-        
+
         loadingView = overlay
     }
-    
+
     private func hideLoadingIndicator() {
         loadingView?.removeFromSuperview()
         loadingView = nil
     }
-    
+
     // MARK: - Load Mode Selector
-    
+
     private func showLoadModeSelector() {
         let alert = UIAlertController(
             title: "选择加载模式",
-            message: "当前: \(loadMode.displayName)\n\n🌐 远程 URL - 开发调试\n📦 本地资源 - 正式发布\n⬇️ 下载 ZIP - 热更新测试",
+            message:
+                "当前: \(loadMode.displayName)\n\n🌐 远程 URL - 开发调试\n📦 本地资源 - 正式发布\n⬇️ 下载 ZIP - 热更新测试",
             preferredStyle: .actionSheet
         )
-        
+
         for mode in LoadMode.allCases {
             let emoji: String
             switch mode {
@@ -295,7 +297,10 @@ class ViewController: UIViewController {
             case .localAssets: emoji = "📦 "
             case .downloadZip: emoji = "⬇️ "
             }
-            let action = UIAlertAction(title: emoji + mode.displayName, style: .default) { [weak self] _ in
+            let action = UIAlertAction(
+                title: emoji + mode.displayName,
+                style: .default
+            ) { [weak self] _ in
                 self?.switchLoadMode(to: mode)
             }
             if mode == loadMode {
@@ -303,48 +308,63 @@ class ViewController: UIViewController {
             }
             alert.addAction(action)
         }
-        
+
         // 快速启动按钮（使用当前配置）
-        let quickStart = UIAlertAction(title: "🚀 快速启动", style: .default) { [weak self] _ in
+        let quickStart = UIAlertAction(title: "🚀 快速启动", style: .default) {
+            [weak self] _ in
             UserDefaults.standard.set(true, forKey: self?.firstLaunchKey ?? "")
             self?.loadContent()
         }
         alert.addAction(quickStart)
-        
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
-            // 如果是首次启动且用户取消，仍然加载内容
-            if self?.isFirstLaunch == true {
-                UserDefaults.standard.set(true, forKey: self?.firstLaunchKey ?? "")
-                self?.loadContent()
+
+        alert.addAction(
+            UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
+                // 如果是首次启动且用户取消，仍然加载内容
+                if self?.isFirstLaunch == true {
+                    UserDefaults.standard.set(
+                        true,
+                        forKey: self?.firstLaunchKey ?? ""
+                    )
+                    self?.loadContent()
+                }
             }
-        })
-        
+        )
+
         if let popover = alert.popoverPresentationController {
             popover.sourceView = view
-            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.sourceRect = CGRect(
+                x: view.bounds.midX,
+                y: view.bounds.midY,
+                width: 0,
+                height: 0
+            )
             popover.permittedArrowDirections = []
         }
-        
+
         present(alert, animated: true)
     }
-    
+
     private func switchLoadMode(to mode: LoadMode) {
         loadMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: loadModeKey)
         UserDefaults.standard.set(true, forKey: firstLaunchKey)
-        
+
         // 更新启动参数
         bridge.setLaunchParams([
             "source": "demo",
             "version": "1.0.0",
-            "loadMode": loadMode.rawValue
+            "loadMode": loadMode.rawValue,
         ])
-        
+
         loadContent()
     }
-    
+
     private func showError(title: String, message: String?) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
         alert.addAction(UIAlertAction(title: "确定", style: .default))
         present(alert, animated: true)
     }

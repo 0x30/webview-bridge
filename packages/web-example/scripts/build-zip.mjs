@@ -50,8 +50,8 @@ archive.on('error', (err) => {
 
 archive.pipe(output);
 
-// 将 dist 目录添加到 zip (使用 www 作为根目录名)
-archive.directory(distDir, 'www');
+// 将 dist 目录添加到 zip（不使用根目录，直接将文件放在 ZIP 根部）
+archive.directory(distDir, false);
 
 archive.finalize();
 
