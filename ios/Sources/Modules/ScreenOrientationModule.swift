@@ -83,9 +83,7 @@ public class ScreenOrientationModule: BridgeModule {
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                     let geometryPreferences = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: mask)
                     windowScene.requestGeometryUpdate(geometryPreferences) { error in
-                        if let error = error {
-                            print("屏幕方向更新失败: \(error)")
-                        }
+                        print("屏幕方向更新失败: \(error)")
                     }
                 }
             }

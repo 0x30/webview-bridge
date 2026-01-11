@@ -193,13 +193,13 @@ public class ZIPHelper {
         return Data(destinationBuffer.prefix(decodedSize))
     }
     
-    /// 使用更简单的方式：调用系统 unzip 命令（仅限 macOS/模拟器）
+    /// 使用更简单的方式：调用系统 unzip 命令（仅限 macOS）
     public static func unzipUsingSystemCommand(
         _ sourceURL: URL,
         to destinationURL: URL
     ) throws {
-        #if targetEnvironment(simulator)
-        // 在模拟器上可以使用系统命令
+        #if os(macOS)
+        // 在 macOS 上可以使用系统命令
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
         process.arguments = ["-o", sourceURL.path, "-d", destinationURL.path]
@@ -211,7 +211,7 @@ public class ZIPHelper {
             throw ZIPError.extractionFailed("unzip 命令执行失败")
         }
         #else
-        // 在真机上使用纯 Swift 实现
+        // 在 iOS 上使用纯 Swift 实现
         try unzip(sourceURL, to: destinationURL)
         #endif
     }

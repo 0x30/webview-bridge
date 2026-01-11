@@ -59,15 +59,16 @@ class MotionModule(
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
-        callback: BridgeCallback
+        callback: (Result<Any?>) -> Unit
     ) {
+        val cb = callback.toBridgeCallback()
         when (method) {
-            "StartAccelerometer" -> startAccelerometer(request, callback)
-            "StopAccelerometer" -> stopAccelerometer(callback)
-            "StartGyroscope" -> startGyroscope(request, callback)
-            "StopGyroscope" -> stopGyroscope(callback)
-            "GetOrientation" -> getOrientation(callback)
-            else -> callback.error(BridgeError.methodNotFound("$moduleName.$method"))
+            "StartAccelerometer" -> startAccelerometer(request, cb)
+            "StopAccelerometer" -> stopAccelerometer(cb)
+            "StartGyroscope" -> startGyroscope(request, cb)
+            "StopGyroscope" -> stopGyroscope(cb)
+            "GetOrientation" -> getOrientation(cb)
+            else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
 

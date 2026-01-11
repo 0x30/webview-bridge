@@ -44,13 +44,14 @@ class ScreenOrientationModule(
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
-        callback: BridgeCallback
+        callback: (Result<Any?>) -> Unit
     ) {
+        val cb = callback.toBridgeCallback()
         when (method) {
-            "Get" -> getOrientation(callback)
-            "Lock" -> lockOrientation(request, callback)
-            "Unlock" -> unlockOrientation(callback)
-            else -> callback.error(BridgeError.methodNotFound("$moduleName.$method"))
+            "Get" -> getOrientation(cb)
+            "Lock" -> lockOrientation(request, cb)
+            "Unlock" -> unlockOrientation(cb)
+            else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
 

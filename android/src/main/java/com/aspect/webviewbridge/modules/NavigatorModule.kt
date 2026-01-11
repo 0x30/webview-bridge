@@ -11,7 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
-import com.aspect.webviewbridge.WebViewBridge
+import com.aspect.webviewbridge.core.WebViewBridge
 import com.aspect.webviewbridge.protocol.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -301,18 +301,19 @@ class NavigatorModule(
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
-        callback: BridgeCallback
+        callback: (Result<Any?>) -> Unit
     ) {
+        val cb = callback.toBridgeCallback()
         when (method) {
-            "Push" -> push(request, callback)
-            "Pop" -> pop(request, callback)
-            "PopToRoot" -> popToRoot(request, callback)
-            "Replace" -> replace(request, callback)
-            "PostMessage" -> postMessage(request, callback)
-            "GetPages" -> getPages(callback)
-            "GetCurrentPage" -> getCurrentPage(callback)
-            "SetTitle" -> setTitle(request, callback)
-            else -> callback.error(BridgeError.methodNotFound("$moduleName.$method"))
+            "Push" -> push(request, cb)
+            "Pop" -> pop(request, cb)
+            "PopToRoot" -> popToRoot(request, cb)
+            "Replace" -> replace(request, cb)
+            "PostMessage" -> postMessage(request, cb)
+            "GetPages" -> getPages(cb)
+            "GetCurrentPage" -> getCurrentPage(cb)
+            "SetTitle" -> setTitle(request, cb)
+            else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
     
@@ -331,11 +332,11 @@ class NavigatorModule(
         }
         
         val title = request.getString("title")
-        val data = request.getObject("data")
-        val animated = request.getBoolean("animated") ?: true
+        val data = request.getMap("data")
+        val animated = request.getBool("animated") ?: true
         
         // 获取源 Bridge（需要通过 bridgeContext 获取）
-        val sourceBridge = bridgeContext.getBridge()
+        val sourceBridge = bridgeContext.getBridge() as? WebViewBridge
         if (sourceBridge == null) {
             callback.error(BridgeError.unknown("Bridge 未初始化"))
             return
@@ -360,7 +361,7 @@ class NavigatorModule(
     // MARK: - Pop
     
     private fun pop(request: BridgeRequest, callback: BridgeCallback) {
-        val result = request.getObject("result")
+        val result = request.getMap("result")
         val delta = request.getInt("delta") ?: 1
         
         PageStackManager.pop(
@@ -409,9 +410,9 @@ class NavigatorModule(
         // 简化实现：先 push 再 pop 旧的
         // 实际可能需要更复杂的逻辑
         val title = request.getString("title")
-        val data = request.getObject("data")
+        val data = request.getMap("data")
         
-        val sourceBridge = bridgeContext.getBridge()
+        val sourceBridge = bridgeContext.getBridge() as? WebViewBridge
         if (sourceBridge == null) {
             callback.error(BridgeError.unknown("Bridge 未初始化"))
             return
@@ -436,7 +437,7 @@ class NavigatorModule(
     // MARK: - PostMessage
     
     private fun postMessage(request: BridgeRequest, callback: BridgeCallback) {
-        val message = request.getObject("message")
+        val message = request.getMap("message")
         if (message == null) {
             callback.error(BridgeError.invalidParams("message 参数必需"))
             return
@@ -489,12 +490,4 @@ class NavigatorModule(
         
         callback.success(mapOf("set" to success))
     }
-}
-
-/**
- * BridgeModuleContext 扩展 - 获取 Bridge 实例
- */
-interface BridgeModuleContext {
-    fun sendEvent(eventName: String, data: Map<String, Any?>)
-    fun getBridge(): WebViewBridge?
 }

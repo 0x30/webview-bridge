@@ -29,36 +29,43 @@ public class BrowserModule: NSObject, BridgeModule, SFSafariViewControllerDelega
         super.init()
     }
     
-    public func handleRequest(method: String, request: BridgeRequest, callback: @escaping BridgeCallback) {
+    public func handleRequest(
+        method: String,
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
         switch method {
         case "Open":
-            open(params: request.params, callback: callback)
+            open(params: params, callback: callback)
         case "Close":
             close(callback: callback)
         case "Prefetch":
-            prefetch(params: request.params, callback: callback)
+            prefetch(params: params, callback: callback)
         default:
-            callback(.failure(.methodNotFound("\(moduleName).\(method)")))
+            callback(.failure(BridgeError.methodNotFound("\(moduleName).\(method)")))
         }
     }
     
     // MARK: - 打开浏览器
     
-    private func open(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let urlString = params?["url"] as? String,
+    private func open(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let urlString = params.getString("url"),
               let url = URL(string: urlString) else {
-            callback(.failure(.invalidParams("url 参数无效")))
+            callback(.failure(BridgeError.invalidParams("url 参数无效")))
             return
         }
         
-        let presentationStyle = params?["presentationStyle"] as? String ?? "fullScreen"
-        let toolbarColor = params?["toolbarColor"] as? String
-        let showTitle = params?["showTitle"] as? Bool ?? true
+        let presentationStyle = params.getString("presentationStyle") ?? "fullScreen"
+        let toolbarColor = params.getString("toolbarColor")
+        let showTitle = params.getBool("showTitle") ?? true
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self,
                   let viewController = self.getTopViewController() else {
-                callback(.failure(.unknown("无法获取视图控制器")))
+                callback(.failure(BridgeError.unknown("无法获取视图控制器")))
                 return
             }
             
@@ -98,7 +105,7 @@ public class BrowserModule: NSObject, BridgeModule, SFSafariViewControllerDelega
     
     // MARK: - 关闭浏览器
     
-    private func close(callback: @escaping BridgeCallback) {
+    private func close(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
         DispatchQueue.main.async { [weak self] in
             if let safari = self?.safariVC {
                 safari.dismiss(animated: true) {
@@ -119,16 +126,19 @@ public class BrowserModule: NSObject, BridgeModule, SFSafariViewControllerDelega
     
     // MARK: - 预加载 URL
     
-    private func prefetch(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let urls = params?["urls"] as? [String] else {
-            callback(.failure(.invalidParams("urls 参数无效")))
+    private func prefetch(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let urlsValue = params["urls"]?.arrayValue as? [String] else {
+            callback(.failure(BridgeError.invalidParams("urls 参数无效")))
             return
         }
         
-        let validURLs = urls.compactMap { URL(string: $0) }
+        let validURLs = urlsValue.compactMap { URL(string: $0) }
         
         if validURLs.isEmpty {
-            callback(.failure(.invalidParams("没有有效的 URL")))
+            callback(.failure(BridgeError.invalidParams("没有有效的 URL")))
             return
         }
         

@@ -390,6 +390,15 @@ public class WebViewBridge: NSObject {
 
     // MARK: - 事件发送
 
+    /// 发送事件到 JS（便捷方法）
+    /// - Parameters:
+    ///   - eventName: 事件名称
+    ///   - data: 事件数据
+    public func sendEvent(_ eventName: String, data: [String: Any]) {
+        let event = BridgeEvent(event: eventName, data: data)
+        sendEvent(event)
+    }
+
     /// 发送事件到 JS
     /// - Parameter event: 事件对象
     public func sendEvent(_ event: BridgeEvent) {

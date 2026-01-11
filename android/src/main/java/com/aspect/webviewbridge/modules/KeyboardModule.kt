@@ -50,15 +50,16 @@ class KeyboardModule(
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
-        callback: BridgeCallback
+        callback: (Result<Any?>) -> Unit
     ) {
+        val cb = callback.toBridgeCallback()
         when (method) {
-            "Show" -> showKeyboard(callback)
-            "Hide" -> hideKeyboard(callback)
-            "GetInfo" -> getInfo(callback)
-            "SetAccessoryBarVisible" -> setAccessoryBarVisible(request, callback)
-            "SetScroll" -> setScroll(request, callback)
-            else -> callback.error(BridgeError.methodNotFound("$moduleName.$method"))
+            "Show" -> showKeyboard(cb)
+            "Hide" -> hideKeyboard(cb)
+            "GetInfo" -> getInfo(cb)
+            "SetAccessoryBarVisible" -> setAccessoryBarVisible(request, cb)
+            "SetScroll" -> setScroll(request, cb)
+            else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
 

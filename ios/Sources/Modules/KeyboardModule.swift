@@ -26,6 +26,8 @@ extension WKWebView {
             // 通过 swizzling WKContentView 来隐藏 inputAccessoryView
             if newValue {
                 hideInputAccessoryView()
+            } else {
+                showInputAccessoryView()
             }
         }
     }
@@ -228,11 +230,6 @@ public class KeyboardModule: BridgeModule {
             findAndActivateTextField(in: subview)
         }
     }
-                return
-            }
-            findAndActivateTextField(in: subview)
-        }
-    }
     
     // MARK: - 键盘通知
     
@@ -308,11 +305,11 @@ public class KeyboardModule: BridgeModule {
 
 // MARK: - 键盘状态
 
-class KeyboardState {
-    static let shared = KeyboardState()
+public class KeyboardState {
+    public static let shared = KeyboardState()
     
-    var isVisible: Bool = false
-    var height: CGFloat = 0
+    public var isVisible = false
+    public var height: CGFloat = 0
     
     private init() {}
 }

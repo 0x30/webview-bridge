@@ -387,6 +387,13 @@ class WebViewBridge(
     override fun getActivity(): Activity? {
         return activityProvider()
     }
+    
+    /**
+     * 获取 WebViewBridge 实例
+     */
+    override fun getBridge(): WebViewBridge {
+        return this
+    }
 
     /**
      * 执行 JavaScript

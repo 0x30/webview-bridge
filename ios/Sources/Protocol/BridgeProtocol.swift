@@ -171,6 +171,18 @@ public struct BridgeError: Error, LocalizedError {
     public static func invalidParams(_ detail: String) -> BridgeError {
         return BridgeError(code: .invalidParams, message: "参数无效: \(detail)")
     }
+    
+    public static func notSupported(_ feature: String) -> BridgeError {
+        return BridgeError(code: .capabilityNotSupported, message: "设备不支持: \(feature)")
+    }
+    
+    public static func internalError(_ detail: String) -> BridgeError {
+        return BridgeError(code: .internalError, message: detail)
+    }
+    
+    public static func unknown(_ detail: String) -> BridgeError {
+        return BridgeError(code: .internalError, message: detail)
+    }
 }
 
 // MARK: - AnyCodable

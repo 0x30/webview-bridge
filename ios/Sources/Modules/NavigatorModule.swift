@@ -122,7 +122,7 @@ public class PageStackManager {
             
             // 注册 Navigator 模块
             let navigatorModule = NavigatorModule(bridge: bridge)
-            bridge.registerModule(navigatorModule)
+            bridge.register(module: navigatorModule)
             
             // 创建视图控制器
             let viewController: UIViewController
@@ -296,45 +296,52 @@ public class NavigatorModule: NSObject, BridgeModule {
         self.currentPageId = id
     }
     
-    public func handleRequest(method: String, request: BridgeRequest, callback: @escaping BridgeCallback) {
+    public func handleRequest(
+        method: String,
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
         switch method {
         case "Push":
-            push(params: request.params, callback: callback)
+            push(params: params, callback: callback)
         case "Pop":
-            pop(params: request.params, callback: callback)
+            pop(params: params, callback: callback)
         case "PopToRoot":
-            popToRoot(params: request.params, callback: callback)
+            popToRoot(params: params, callback: callback)
         case "Replace":
-            replace(params: request.params, callback: callback)
+            replace(params: params, callback: callback)
         case "PostMessage":
-            postMessage(params: request.params, callback: callback)
+            postMessage(params: params, callback: callback)
         case "GetPages":
             getPages(callback: callback)
         case "GetCurrentPage":
             getCurrentPage(callback: callback)
         case "SetTitle":
-            setTitle(params: request.params, callback: callback)
+            setTitle(params: params, callback: callback)
         default:
-            callback(.failure(.methodNotFound("\(moduleName).\(method)")))
+            callback(.failure(BridgeError.methodNotFound("\(moduleName).\(method)")))
         }
     }
     
     // MARK: - Push
     
-    private func push(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let url = params?["url"] as? String else {
-            callback(.failure(.invalidParams("url 参数必需")))
+    private func push(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let url = params.getString("url") else {
+            callback(.failure(BridgeError.invalidParams("url 参数必需")))
             return
         }
         
         guard let sourceBridge = bridge else {
-            callback(.failure(.unknown("Bridge 未初始化")))
+            callback(.failure(BridgeError.unknown("Bridge 未初始化")))
             return
         }
         
-        let title = params?["title"] as? String
-        let data = params?["data"] as? [String: Any]
-        let animated = params?["animated"] as? Bool ?? true
+        let title = params.getString("title")
+        let data = params["data"]?.dictionaryValue
+        let animated = params.getBool("animated") ?? true
         
         PageStackManager.shared.push(
             url: url,
@@ -347,17 +354,20 @@ public class NavigatorModule: NSObject, BridgeModule {
             case .success(let pageInfo):
                 callback(.success(pageInfo.dictionary))
             case .failure(let error):
-                callback(.failure(.unknown(error.localizedDescription)))
+                callback(.failure(BridgeError.unknown(error.localizedDescription)))
             }
         }
     }
     
     // MARK: - Pop
     
-    private func pop(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        let result = params?["result"] as? [String: Any]
-        let delta = params?["delta"] as? Int ?? 1
-        let animated = params?["animated"] as? Bool ?? true
+    private func pop(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        let result = params["result"]?.dictionaryValue
+        let delta = params.getInt("delta") ?? 1
+        let animated = params.getBool("animated") ?? true
         
         PageStackManager.shared.pop(
             result: result,
@@ -368,15 +378,18 @@ public class NavigatorModule: NSObject, BridgeModule {
             case .success:
                 callback(.success(["popped": true]))
             case .failure(let error):
-                callback(.failure(.unknown(error.localizedDescription)))
+                callback(.failure(BridgeError.unknown(error.localizedDescription)))
             }
         }
     }
     
     // MARK: - PopToRoot
     
-    private func popToRoot(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        let animated = params?["animated"] as? Bool ?? true
+    private func popToRoot(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        let animated = params.getBool("animated") ?? true
         let pages = PageStackManager.shared.pages
         
         if pages.count <= 1 {
@@ -393,28 +406,31 @@ public class NavigatorModule: NSObject, BridgeModule {
             case .success:
                 callback(.success(["popped": true]))
             case .failure(let error):
-                callback(.failure(.unknown(error.localizedDescription)))
+                callback(.failure(BridgeError.unknown(error.localizedDescription)))
             }
         }
     }
     
     // MARK: - Replace
     
-    private func replace(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let url = params?["url"] as? String else {
-            callback(.failure(.invalidParams("url 参数必需")))
+    private func replace(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let url = params.getString("url") else {
+            callback(.failure(BridgeError.invalidParams("url 参数必需")))
             return
         }
         
         // 先 pop 当前页面，再 push 新页面
         // 这是简化实现，实际可能需要更复杂的逻辑
         guard let sourceBridge = bridge else {
-            callback(.failure(.unknown("Bridge 未初始化")))
+            callback(.failure(BridgeError.unknown("Bridge 未初始化")))
             return
         }
         
-        let title = params?["title"] as? String
-        let data = params?["data"] as? [String: Any]
+        let title = params.getString("title")
+        let data = params["data"]?.dictionaryValue
         
         // 先 push 新页面
         PageStackManager.shared.push(
@@ -429,20 +445,23 @@ public class NavigatorModule: NSObject, BridgeModule {
                 // TODO: 移除旧页面
                 callback(.success(pageInfo.dictionary))
             case .failure(let error):
-                callback(.failure(.unknown(error.localizedDescription)))
+                callback(.failure(BridgeError.unknown(error.localizedDescription)))
             }
         }
     }
     
     // MARK: - PostMessage
     
-    private func postMessage(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let message = params?["message"] as? [String: Any] else {
-            callback(.failure(.invalidParams("message 参数必需")))
+    private func postMessage(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let message = params["message"]?.dictionaryValue else {
+            callback(.failure(BridgeError.invalidParams("message 参数必需")))
             return
         }
         
-        let targetPageId = params?["targetPageId"] as? String
+        let targetPageId = params.getString("targetPageId")
         let sourcePageId = currentPageId ?? PageStackManager.shared.currentPage?.info.id ?? ""
         
         let success = PageStackManager.shared.postMessage(
@@ -456,26 +475,29 @@ public class NavigatorModule: NSObject, BridgeModule {
     
     // MARK: - GetPages
     
-    private func getPages(callback: @escaping BridgeCallback) {
+    private func getPages(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
         let pages = PageStackManager.shared.pages.map { $0.dictionary }
         callback(.success(["pages": pages, "count": pages.count]))
     }
     
     // MARK: - GetCurrentPage
     
-    private func getCurrentPage(callback: @escaping BridgeCallback) {
+    private func getCurrentPage(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
         if let current = PageStackManager.shared.currentPage {
             callback(.success(current.info.dictionary))
         } else {
-            callback(.failure(.unknown("没有当前页面")))
+            callback(.failure(BridgeError.unknown("没有当前页面")))
         }
     }
     
     // MARK: - SetTitle
     
-    private func setTitle(params: [String: Any]?, callback: @escaping BridgeCallback) {
-        guard let title = params?["title"] as? String else {
-            callback(.failure(.invalidParams("title 参数必需")))
+    private func setTitle(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        guard let title = params.getString("title") else {
+            callback(.failure(BridgeError.invalidParams("title 参数必需")))
             return
         }
         
@@ -484,7 +506,7 @@ public class NavigatorModule: NSObject, BridgeModule {
                 current.viewController.title = title
                 callback(.success(["set": true]))
             } else {
-                callback(.failure(.unknown("没有当前页面")))
+                callback(.failure(BridgeError.unknown("没有当前页面")))
             }
         }
     }

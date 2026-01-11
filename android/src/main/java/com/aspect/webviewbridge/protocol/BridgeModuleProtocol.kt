@@ -6,6 +6,8 @@
 
 package com.aspect.webviewbridge.protocol
 
+// 注意：BridgeRequest 和 BridgeError 定义在 BridgeProtocol.kt 中
+
 /**
  * Bridge 模块接口
  *
@@ -88,6 +90,12 @@ interface BridgeModuleContext {
      * 获取 Activity （用于权限请求等操作）
      */
     fun getActivity(): android.app.Activity?
+    
+    /**
+     * 获取 Bridge 实例（返回 Any 以避免循环依赖）
+     * 实际返回类型应该是 WebViewBridge
+     */
+    fun getBridge(): Any?
 }
 
 /**
@@ -101,4 +109,37 @@ inline fun <T> Result<T>.fold(
         isSuccess -> onSuccess(getOrThrow())
         isFailure -> onFailure(exceptionOrNull()!!)
     }
+}
+
+/**
+ * Bridge 回调接口
+ * 提供简化的成功/错误回调
+ */
+interface BridgeCallback {
+    fun success(data: Any?)
+    fun error(error: BridgeError)
+    
+    companion object {
+        /**
+         * 从 Result 回调创建 BridgeCallback
+         */
+        fun from(callback: (Result<Any?>) -> Unit): BridgeCallback {
+            return object : BridgeCallback {
+                override fun success(data: Any?) {
+                    callback(Result.success(data))
+                }
+                
+                override fun error(error: BridgeError) {
+                    callback(Result.failure(error))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 将 (Result<Any?>) -> Unit 转换为 BridgeCallback
+ */
+fun ((Result<Any?>) -> Unit).toBridgeCallback(): BridgeCallback {
+    return BridgeCallback.from(this)
 }

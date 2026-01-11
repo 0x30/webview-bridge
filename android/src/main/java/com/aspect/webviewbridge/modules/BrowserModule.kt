@@ -44,13 +44,14 @@ class BrowserModule(
     override fun handleRequest(
         method: String,
         request: BridgeRequest,
-        callback: BridgeCallback
+        callback: (Result<Any?>) -> Unit
     ) {
+        val cb = callback.toBridgeCallback()
         when (method) {
-            "Open" -> open(request, callback)
-            "Close" -> close(callback)
-            "Prefetch" -> prefetch(request, callback)
-            else -> callback.error(BridgeError.methodNotFound("$moduleName.$method"))
+            "Open" -> open(request, cb)
+            "Close" -> close(cb)
+            "Prefetch" -> prefetch(request, cb)
+            else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
 
@@ -102,8 +103,8 @@ class BrowserModule(
         }
 
         val toolbarColor = request.getString("toolbarColor")
-        val showTitle = request.getBoolean("showTitle") ?: true
-        val shareState = request.getInt("shareState") ?: CustomTabsIntent.SHARE_STATE_DEFAULT
+        val showTitle = request.getBool("showTitle") ?: true
+        val shareState = request.getInt("shareState") ?: 0
 
         try {
             val builder = CustomTabsIntent.Builder(customTabsSession)

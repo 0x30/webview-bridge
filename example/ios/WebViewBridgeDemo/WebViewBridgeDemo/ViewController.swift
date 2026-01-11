@@ -33,10 +33,10 @@ class ViewController: UIViewController {
     private var loadMode: LoadMode = .remoteURL
     
     /// 远程 URL 地址
-    private let remoteURL = "http://localhost:5174"
+    private let remoteURL = "http://localhost:5173"
     
     /// ZIP 下载地址
-    private let zipURL = "http://localhost:5174/web-bundle.zip"
+    private let zipURL = "http://localhost:5173/web-bundle.zip"
     
     /// UserDefaults key
     private let loadModeKey = "webview_load_mode"
@@ -108,7 +108,7 @@ class ViewController: UIViewController {
         
         // 注册自定义模块
         let customModule = CustomModule(viewController: self)
-        bridge.registerModule(customModule)
+        bridge.register(module: customModule)
 
         // 设置启动参数（可选）
         bridge.setLaunchParams([

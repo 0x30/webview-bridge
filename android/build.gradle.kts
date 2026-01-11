@@ -46,6 +46,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // Chrome Custom Tabs
+    implementation("androidx.browser:browser:1.7.0")
+
     // 可选依赖 - 生物识别
     implementation("androidx.biometric:biometric:1.1.0")
     

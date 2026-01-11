@@ -90,6 +90,56 @@ data class BridgeRequest(
     fun getObject(key: String): JsonObject? {
         return params?.get(key)?.takeIf { it.isJsonObject }?.asJsonObject
     }
+    
+    /**
+     * 获取对象参数作为 Map
+     */
+    fun getMap(key: String): Map<String, Any?>? {
+        val obj = getObject(key) ?: return null
+        return jsonObjectToMap(obj)
+    }
+    
+    companion object {
+        private val gson = Gson()
+        
+        /**
+         * 将 JsonObject 转换为 Map
+         */
+        fun jsonObjectToMap(jsonObject: JsonObject): Map<String, Any?> {
+            val map = mutableMapOf<String, Any?>()
+            for ((key, value) in jsonObject.entrySet()) {
+                map[key] = jsonElementToValue(value)
+            }
+            return map
+        }
+        
+        /**
+         * 将 JsonElement 转换为对应的值
+         */
+        private fun jsonElementToValue(element: JsonElement): Any? {
+            return when {
+                element.isJsonNull -> null
+                element.isJsonPrimitive -> {
+                    val primitive = element.asJsonPrimitive
+                    when {
+                        primitive.isBoolean -> primitive.asBoolean
+                        primitive.isNumber -> {
+                            val num = primitive.asNumber
+                            if (num.toDouble() == num.toLong().toDouble()) {
+                                num.toLong()
+                            } else {
+                                num.toDouble()
+                            }
+                        }
+                        else -> primitive.asString
+                    }
+                }
+                element.isJsonArray -> element.asJsonArray.map { jsonElementToValue(it) }
+                element.isJsonObject -> jsonObjectToMap(element.asJsonObject)
+                else -> null
+            }
+        }
+    }
 }
 
 /**
@@ -211,6 +261,16 @@ data class BridgeError(
     
     constructor(errorCode: BridgeErrorCode, customMessage: String) : this(errorCode.code, customMessage)
     
+    constructor(code: Code, customMessage: String) : this(code.code, customMessage)
+    
+    /**
+     * 错误码枚举（简化版）
+     */
+    enum class Code(val code: Int) {
+        CAPABILITY_NOT_SUPPORTED(2003),
+        UNKNOWN(5999)
+    }
+    
     companion object {
         fun parseError(detail: String? = null): BridgeError {
             return BridgeError(
@@ -258,6 +318,13 @@ data class BridgeError(
             return BridgeError(
                 BridgeErrorCode.CAPABILITY_NOT_SUPPORTED.code,
                 "不支持: $feature"
+            )
+        }
+        
+        fun unknown(detail: String? = null): BridgeError {
+            return BridgeError(
+                BridgeErrorCode.UNKNOWN_ERROR.code,
+                detail ?: BridgeErrorCode.UNKNOWN_ERROR.message
             )
         }
     }
