@@ -240,3 +240,18 @@ export {
   type BrowserPrefetchResult,
   type BrowserEventData,
 } from './browser';
+
+// Navigator 模块（页面栈管理）
+export {
+  NavigatorModule,
+  type PageInfo,
+  type PushOptions,
+  type PopOptions,
+  type ReplaceOptions,
+  type PostMessageOptions,
+  type PageCreatedEventData,
+  type PageMessageEventData,
+  type PageResultEventData,
+  type GetPagesResult,
+  type NavigatorResult,
+} from './navigator';

@@ -148,9 +148,135 @@ class ViewController: UIViewController {
                 showError(title: "本地资源不存在", message: "请将 web-example 的 dist 目录复制到项目的 www 文件夹")
             }
         case .downloadZip:
-            print("⬇️ 下载 ZIP 功能需要额外实现")
-            showError(title: "提示", message: "ZIP 下载功能需要添加 SSZipArchive 依赖")
+            print("⬇️ 下载并解压 ZIP...")
+            downloadAndExtractZip()
         }
+    }
+    
+    // MARK: - ZIP 下载和解压
+    
+    /// 下载并解压 ZIP 文件
+    private func downloadAndExtractZip() {
+        showLoadingIndicator()
+        
+        guard let url = URL(string: zipURL) else {
+            hideLoadingIndicator()
+            showError(title: "错误", message: "无效的 ZIP URL")
+            return
+        }
+        
+        let task = URLSession.shared.downloadTask(with: url) { [weak self] localURL, response, error in
+            DispatchQueue.main.async {
+                self?.hideLoadingIndicator()
+            }
+            
+            if let error = error {
+                DispatchQueue.main.async {
+                    self?.showError(title: "下载失败", message: error.localizedDescription)
+                }
+                return
+            }
+            
+            guard let localURL = localURL else {
+                DispatchQueue.main.async {
+                    self?.showError(title: "下载失败", message: "未获取到文件")
+                }
+                return
+            }
+            
+            // 解压 ZIP
+            self?.extractZip(from: localURL)
+        }
+        
+        task.resume()
+    }
+    
+    /// 解压 ZIP 文件
+    private func extractZip(from zipURL: URL) {
+        let fileManager = FileManager.default
+        let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let extractPath = documentsPath.appendingPathComponent("web-content")
+        
+        // 删除旧内容
+        try? fileManager.removeItem(at: extractPath)
+        
+        do {
+            // 创建目标目录
+            try fileManager.createDirectory(at: extractPath, withIntermediateDirectories: true)
+            
+            // 使用 ZIPHelper 解压
+            #if targetEnvironment(simulator)
+            // 模拟器上使用系统命令（更快）
+            try ZIPHelper.unzipUsingSystemCommand(zipURL, to: extractPath)
+            #else
+            // 真机上使用纯 Swift 实现
+            try ZIPHelper.unzip(zipURL, to: extractPath)
+            #endif
+            
+            print("✅ ZIP 解压成功: \(extractPath.path)")
+            DispatchQueue.main.async { [weak self] in
+                self?.loadExtractedContent(from: extractPath)
+            }
+        } catch {
+            print("❌ 解压失败: \(error)")
+            DispatchQueue.main.async { [weak self] in
+                self?.showError(title: "解压失败", message: error.localizedDescription)
+            }
+        }
+    }
+    
+    /// 加载解压后的内容
+    private func loadExtractedContent(from path: URL) {
+        // 查找 index.html
+        let indexPath = path.appendingPathComponent("index.html")
+        
+        if FileManager.default.fileExists(atPath: indexPath.path) {
+            webView.loadFileURL(indexPath, allowingReadAccessTo: path)
+            print("✅ 已加载: \(indexPath.path)")
+        } else {
+            // 可能在子目录中
+            if let contents = try? FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: nil),
+               let subdir = contents.first(where: { $0.hasDirectoryPath }) {
+                let subIndexPath = subdir.appendingPathComponent("index.html")
+                if FileManager.default.fileExists(atPath: subIndexPath.path) {
+                    webView.loadFileURL(subIndexPath, allowingReadAccessTo: subdir)
+                    print("✅ 已加载: \(subIndexPath.path)")
+                    return
+                }
+            }
+            showError(title: "加载失败", message: "未找到 index.html")
+        }
+    }
+    
+    /// 显示加载指示器
+    private var loadingView: UIView?
+    
+    private func showLoadingIndicator() {
+        let overlay = UIView(frame: view.bounds)
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .white
+        indicator.center = overlay.center
+        indicator.startAnimating()
+        
+        let label = UILabel()
+        label.text = "下载中..."
+        label.textColor = .white
+        label.sizeToFit()
+        label.center = CGPoint(x: overlay.center.x, y: overlay.center.y + 40)
+        
+        overlay.addSubview(indicator)
+        overlay.addSubview(label)
+        view.addSubview(overlay)
+        
+        loadingView = overlay
+    }
+    
+    private func hideLoadingIndicator() {
+        loadingView?.removeFromSuperview()
+        loadingView = nil
     }
     
     // MARK: - Load Mode Selector

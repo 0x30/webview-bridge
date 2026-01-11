@@ -63,6 +63,8 @@ interface KeyboardInfo {
 
 设置键盘附件栏的可见性（iOS 特有）。
 
+键盘附件栏是 iOS WKWebView 在键盘上方显示的工具条，包含"上一个"、"下一个"、"完成"等按钮。
+
 **请求参数**:
 | 参数 | 类型 | 必需 | 说明 |
 |------|------|------|------|
@@ -71,8 +73,24 @@ interface KeyboardInfo {
 **响应数据**:
 ```json
 {
-  "set": true
+  "set": true,
+  "visible": false
 }
+```
+
+**示例**:
+```typescript
+// 隐藏键盘附件栏
+await Bridge.keyboard.setAccessoryBarVisible(false);
+
+// 显示键盘附件栏
+await Bridge.keyboard.setAccessoryBarVisible(true);
+```
+
+**注意**: 
+- 此功能仅在 iOS 平台有效
+- Android 原生没有附件栏概念
+- 隐藏附件栏后可以获得更大的输入区域
 ```
 
 ---

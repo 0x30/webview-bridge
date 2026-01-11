@@ -28,6 +28,7 @@ import {
   ScreenOrientationModule,
   MotionModule,
   BrowserModule,
+  NavigatorModule,
 } from './modules';
 import { SystemEventName, EventDataMap } from './events';
 
@@ -119,6 +120,9 @@ class WebViewBridge {
   /** Browser 模块 - 应用内浏览器 */
   public readonly browser: BrowserModule;
 
+  /** Navigator 模块 - 页面栈管理（类似小程序） */
+  public readonly navigator: NavigatorModule;
+
   constructor(config?: BridgeConfig) {
     this.core = BridgeCore.getInstance(config);
     
@@ -142,6 +146,7 @@ class WebViewBridge {
     this.screenOrientation = new ScreenOrientationModule(this.core);
     this.motion = new MotionModule(this.core);
     this.browser = new BrowserModule(this.core);
+    this.navigator = new NavigatorModule(this.core);
   }
 
   /**
