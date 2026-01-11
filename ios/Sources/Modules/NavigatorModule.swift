@@ -98,6 +98,7 @@ public class PageStackManager {
         title: String? = nil,
         data: [String: Any]? = nil,
         animated: Bool = true,
+        navigationBarHidden: Bool = false,
         from sourceBridge: WebViewBridge,
         completion: @escaping (Result<PageInfo, Error>) -> Void
     ) {
@@ -133,7 +134,8 @@ public class PageStackManager {
                     webView: webView,
                     bridge: bridge,
                     pageId: pageId,
-                    initialData: data
+                    initialData: data,
+                    navigationBarHidden: navigationBarHidden
                 )
             }
             
@@ -279,7 +281,8 @@ public class NavigatorModule: NSObject, BridgeModule {
             "PostMessage",
             "GetPages",
             "GetCurrentPage",
-            "SetTitle"
+            "SetTitle",
+            "Close"
         ]
     }
     
@@ -318,6 +321,8 @@ public class NavigatorModule: NSObject, BridgeModule {
             getCurrentPage(callback: callback)
         case "SetTitle":
             setTitle(params: params, callback: callback)
+        case "Close":
+            close(params: params, callback: callback)
         default:
             callback(.failure(BridgeError.methodNotFound("\(moduleName).\(method)")))
         }
@@ -342,12 +347,14 @@ public class NavigatorModule: NSObject, BridgeModule {
         let title = params.getString("title")
         let data = params["data"]?.dictionaryValue
         let animated = params.getBool("animated") ?? true
+        let navigationBarHidden = params.getBool("navigationBarHidden") ?? false
         
         PageStackManager.shared.push(
             url: url,
             title: title,
             data: data,
             animated: animated,
+            navigationBarHidden: navigationBarHidden,
             from: sourceBridge
         ) { result in
             switch result {
@@ -510,6 +517,30 @@ public class NavigatorModule: NSObject, BridgeModule {
             }
         }
     }
+    
+    // MARK: - Close
+    
+    private func close(
+        params: [String: AnyCodable],
+        callback: @escaping (Result<Any?, BridgeError>) -> Void
+    ) {
+        let result = params["result"]?.dictionaryValue
+        let animated = params.getBool("animated") ?? true
+        
+        // Close 就是 Pop 当前页面
+        PageStackManager.shared.pop(
+            result: result,
+            delta: 1,
+            animated: animated
+        ) { popResult in
+            switch popResult {
+            case .success:
+                callback(.success(["closed": true]))
+            case .failure(let error):
+                callback(.failure(BridgeError.unknown(error.localizedDescription)))
+            }
+        }
+    }
 }
 
 // MARK: - Navigator 页面视图控制器
@@ -521,12 +552,20 @@ public class NavigatorPageViewController: UIViewController {
     public let bridge: WebViewBridge
     public let pageId: String
     public var initialData: [String: Any]?
+    public let navigationBarHidden: Bool
     
-    public init(webView: WKWebView, bridge: WebViewBridge, pageId: String, initialData: [String: Any]? = nil) {
+    public init(
+        webView: WKWebView,
+        bridge: WebViewBridge,
+        pageId: String,
+        initialData: [String: Any]? = nil,
+        navigationBarHidden: Bool = false
+    ) {
         self.webView = webView
         self.bridge = bridge
         self.pageId = pageId
         self.initialData = initialData
+        self.navigationBarHidden = navigationBarHidden
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -547,13 +586,22 @@ public class NavigatorPageViewController: UIViewController {
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
-        // 添加返回按钮
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            title: "返回",
-            style: .plain,
-            target: self,
-            action: #selector(handleBack)
-        )
+        // 添加返回按钮（仅在显示导航栏时）
+        if !navigationBarHidden {
+            navigationItem.leftBarButtonItem = UIBarButtonItem(
+                title: "返回",
+                style: .plain,
+                target: self,
+                action: #selector(handleBack)
+            )
+        }
+    }
+    
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // 隐藏或显示导航栏
+        navigationController?.setNavigationBarHidden(navigationBarHidden, animated: animated)
     }
     
     @objc private func handleBack() {

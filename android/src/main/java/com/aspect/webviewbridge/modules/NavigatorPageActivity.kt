@@ -1,4 +1,4 @@
-package com.aspect.webviewbridge.demo
+package com.aspect.webviewbridge.modules
 
 import android.os.Bundle
 import android.webkit.WebView
@@ -6,27 +6,30 @@ import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.aspect.webviewbridge.core.BridgeConfiguration
 import com.aspect.webviewbridge.core.WebViewBridge
-import com.aspect.webviewbridge.modules.PageStackManager
 
 /**
- * Navigator 模块使用的页面 Activity
+ * Navigator 模块使用的默认页面 Activity
  * 
  * 用于 Navigator.push() 打开的新页面
+ * 
+ * 用法：
+ * 1. 直接使用：PageStackManager.pageActivityClass = NavigatorPageActivity::class.java
+ * 2. 继承自定义：创建自己的 Activity 继承此类，重写 setupCustomViews() 等方法
  */
-class NavigatorPageActivity : AppCompatActivity() {
+open class NavigatorPageActivity : AppCompatActivity() {
     
     companion object {
         private const val TAG = "NavigatorPageActivity"
     }
     
-    private var bridge: WebViewBridge? = null
-    private lateinit var webView: WebView
-    private lateinit var rootContainer: FrameLayout
+    protected var bridge: WebViewBridge? = null
+    protected lateinit var webView: WebView
+    protected lateinit var rootContainer: FrameLayout
     
-    private var pageId: String? = null
-    private var pageUrl: String? = null
-    private var pageTitle: String? = null
-    private var pageData: Bundle? = null
+    protected var pageId: String? = null
+    protected var pageUrl: String? = null
+    protected var pageTitle: String? = null
+    protected var pageData: Bundle? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,10 +50,21 @@ class NavigatorPageActivity : AppCompatActivity() {
         // 初始化 WebView 和 Bridge
         setupWebViewAndBridge()
         
+        // 自定义视图（子类可重写）
+        setupCustomViews()
+        
         // 加载 URL
         pageUrl?.let { url ->
             bridge?.loadUrl(url)
         }
+    }
+    
+    /**
+     * 设置自定义视图
+     * 子类可重写此方法添加自定义 UI（如自定义导航栏等）
+     */
+    protected open fun setupCustomViews() {
+        // 默认不添加额外视图
     }
     
     private fun setupWebViewAndBridge() {
@@ -68,14 +82,7 @@ class NavigatorPageActivity : AppCompatActivity() {
         rootContainer.addView(webView)
         
         // 创建 Bridge
-        bridge = WebViewBridge(
-            context = this,
-            webView = webView,
-            configuration = BridgeConfiguration(
-                debug = true,
-                allowsHTTPLoading = true
-            )
-        )
+        bridge = createBridge()
         
         // 注册到页面栈
         pageId?.let { id ->
@@ -85,6 +92,30 @@ class NavigatorPageActivity : AppCompatActivity() {
         }
         
         // 设置启动参数
+        val launchParams = createLaunchParams()
+        bridge?.setLaunchParams(launchParams)
+    }
+    
+    /**
+     * 创建 Bridge 实例
+     * 子类可重写此方法自定义 Bridge 配置
+     */
+    protected open fun createBridge(): WebViewBridge {
+        return WebViewBridge(
+            context = this,
+            webView = webView,
+            configuration = BridgeConfiguration(
+                debug = true,
+                allowsHTTPLoading = true
+            )
+        )
+    }
+    
+    /**
+     * 创建启动参数
+     * 子类可重写此方法添加额外的启动参数
+     */
+    protected open fun createLaunchParams(): Map<String, Any> {
         val launchParams = mutableMapOf<String, Any>(
             "source" to "navigator",
             "pageId" to (pageId ?: "")
@@ -97,7 +128,7 @@ class NavigatorPageActivity : AppCompatActivity() {
             }
         }
         
-        bridge?.setLaunchParams(launchParams)
+        return launchParams
     }
     
     override fun onResume() {
@@ -117,6 +148,7 @@ class NavigatorPageActivity : AppCompatActivity() {
             pageId?.let { PageStackManager.removePage(it) }
             finish()
         } else {
+            @Suppress("DEPRECATION")
             super.onBackPressed()
         }
     }

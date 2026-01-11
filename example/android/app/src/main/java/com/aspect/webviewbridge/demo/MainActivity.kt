@@ -18,6 +18,7 @@ import com.aspect.webviewbridge.core.BridgeConfiguration
 import com.aspect.webviewbridge.core.URLSchemeConfiguration
 import com.aspect.webviewbridge.core.WebViewBridge
 import com.aspect.webviewbridge.demo.modules.CustomModule
+import com.aspect.webviewbridge.modules.NavigatorPageActivity
 import com.aspect.webviewbridge.modules.PageStackManager
 import com.aspect.webviewbridge.modules.PermissionModule
 import kotlinx.coroutines.*

@@ -293,7 +293,8 @@ class NavigatorModule(
         "PostMessage",
         "GetPages",
         "GetCurrentPage",
-        "SetTitle"
+        "SetTitle",
+        "Close"
     )
     
     private var currentPageId: String? = null
@@ -313,6 +314,7 @@ class NavigatorModule(
             "GetPages" -> getPages(cb)
             "GetCurrentPage" -> getCurrentPage(cb)
             "SetTitle" -> setTitle(request, cb)
+            "Close" -> close(request, cb)
             else -> cb.error(BridgeError.methodNotFound("$moduleName.$method"))
         }
     }
@@ -489,5 +491,24 @@ class NavigatorModule(
         val success = PageStackManager.setTitle(pageId, title)
         
         callback.success(mapOf("set" to success))
+    }
+    
+    // MARK: - Close
+    
+    private fun close(request: BridgeRequest, callback: BridgeCallback) {
+        val result = request.getMap("result")
+        val animated = request.getBool("animated") ?: true
+        
+        // Close 就是 Pop 当前页面
+        PageStackManager.pop(
+            result = result,
+            delta = 1
+        ) { popResult ->
+            popResult.onSuccess {
+                callback.success(mapOf("closed" to true))
+            }.onFailure { error ->
+                callback.error(BridgeError.unknown(error.message ?: "Close 失败"))
+            }
+        }
     }
 }

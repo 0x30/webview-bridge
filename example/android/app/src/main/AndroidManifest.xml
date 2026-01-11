@@ -67,7 +67,7 @@
         
         <!-- Navigator 模块使用的页面 Activity -->
         <activity
-            android:name=".NavigatorPageActivity"
+            android:name="com.aspect.webviewbridge.modules.NavigatorPageActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:windowSoftInputMode="adjustResize" />

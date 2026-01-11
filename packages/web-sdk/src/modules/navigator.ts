@@ -39,6 +39,8 @@ export interface PushOptions {
   data?: Record<string, unknown>
   /** 是否使用动画，默认 true */
   animated?: boolean
+  /** 是否隐藏导航栏（iOS only），默认 false */
+  navigationBarHidden?: boolean
 }
 
 /** Pop 选项 */
@@ -114,6 +116,7 @@ export class NavigatorModule implements BridgeModule {
     'GetPages',
     'GetCurrentPage',
     'SetTitle',
+    'Close',
   ] as const
 
   private pageCreatedCallback: ((data: PageCreatedEventData) => void) | null = null
@@ -234,6 +237,26 @@ export class NavigatorModule implements BridgeModule {
    */
   async pop(options?: PopOptions): Promise<NavigatorResult> {
     return this.bridge.send<NavigatorResult>('Navigator.Pop', (options || {}) as Record<string, unknown>)
+  }
+
+  /**
+   * 关闭当前页面
+   * 
+   * 和 pop()相同，但语义更明确，仅关闭当前页面
+   * 
+   * @example
+   * ```ts
+   * // 关闭当前页面
+   * await navigator.close()
+   * 
+   * // 关闭并返回数据
+   * await navigator.close({
+   *   result: { success: true }
+   * })
+   * ```
+   */
+  async close(options?: { result?: Record<string, unknown>, animated?: boolean }): Promise<NavigatorResult> {
+    return this.bridge.send<NavigatorResult>('Navigator.Close', (options || {}) as Record<string, unknown>)
   }
 
   /**

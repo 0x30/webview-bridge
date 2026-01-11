@@ -111,6 +111,47 @@ export default defineComponent({
       }
     }
 
+    const closePage = async () => {
+      try {
+        isLoading.value = true
+        const result = await Bridge.navigator.close({
+          result: { action: 'closed', timestamp: Date.now() }
+        })
+        if (result.closed) {
+          log('success', '已关闭当前页面')
+          Toast.success('已关闭')
+        }
+      } catch (error: any) {
+        log('error', `关闭失败: ${error.message}`)
+        Toast.fail(error.message || '关闭失败')
+      } finally {
+        isLoading.value = false
+      }
+    }
+
+    const openPageWithoutNavBar = async () => {
+      try {
+        isLoading.value = true
+        const result = await Bridge.navigator.push({
+          url: window.location.href,
+          title: '无导航栏页面',
+          navigationBarHidden: true,
+          data: {
+            hideNavBar: true,
+            timestamp: Date.now()
+          }
+        })
+        log('success', `打开无导航栏页面: ${result.id}`)
+        Toast.success('已打开（隐藏导航栏）')
+        await fetchPageInfo()
+      } catch (error: any) {
+        log('error', `打开页面失败: ${error.message}`)
+        Toast.fail(error.message || '打开页面失败')
+      } finally {
+        isLoading.value = false
+      }
+    }
+
     const goToRoot = async () => {
       try {
         isLoading.value = true
@@ -169,13 +210,32 @@ export default defineComponent({
           </Button>
           
           <Button
+            type="success"
+            block
+            loading={isLoading.value}
+            onClick={openPageWithoutNavBar}
+          >
+            打开无导航栏页面 (iOS)
+          </Button>
+          
+          <Button
             type="default"
             block
             loading={isLoading.value}
             onClick={goBack}
             disabled={pageStack.value.length <= 1}
           >
-            返回上一页
+            返回上一页 (Pop)
+          </Button>
+          
+          <Button
+            type="primary"
+            block
+            loading={isLoading.value}
+            onClick={closePage}
+            disabled={pageStack.value.length <= 1}
+          >
+            关闭当前页面 (Close)
           </Button>
           
           <Button
@@ -226,6 +286,8 @@ export default defineComponent({
             <li>自举：打开当前页面创建新的 WebView 实例</li>
             <li>支持页面间数据传递和消息通信</li>
             <li>类似小程序的多页面栈管理</li>
+            <li><strong>Close</strong>: 关闭当前页面（语义更明确）</li>
+            <li><strong>navigationBarHidden</strong>: iOS 可隐藏导航栏</li>
           </ul>
         </div>
       </div>
