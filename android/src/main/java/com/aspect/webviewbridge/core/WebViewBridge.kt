@@ -24,6 +24,8 @@ import com.aspect.webviewbridge.protocol.*
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.io.ByteArrayInputStream
+import java.io.File
+import java.io.FileInputStream
 
 /**
  * URL Scheme 配置
@@ -34,7 +36,9 @@ data class URLSchemeConfiguration(
     /** 主机名 (如 "localhost") */
     val host: String = "localhost",
     /** 本地资源根目录 (相对于 assets) */
-    val resourcePath: String = ""
+    val resourcePath: String = "",
+    /** 外部文件系统根目录（可选，用于加载解压的 ZIP 等） */
+    var externalRootDirectory: File? = null
 )
 
 /**
@@ -147,6 +151,18 @@ class WebViewBridge(
         if (configuration.debug) {
             WebView.setWebContentsDebuggingEnabled(true)
             Log.d(TAG, "WebView 调试已启用")
+        }
+    }
+    
+    /**
+     * 更新外部资源根目录
+     * 用于加载解压后的 ZIP 内容
+     * @param directory 外部文件系统目录
+     */
+    fun updateExternalRootDirectory(directory: File) {
+        configuration.urlScheme?.let { scheme ->
+            scheme.externalRootDirectory = directory
+            Log.d(TAG, "更新外部资源根目录: ${directory.absolutePath}")
         }
     }
 
@@ -477,8 +493,12 @@ class WebViewBridge(
                     uri.scheme == urlScheme.scheme &&
                     uri.host == urlScheme.host
                 ) {
-                    val path = uri.path?.removePrefix("/") ?: ""
-                    return loadAsset(path)
+                    var path = uri.path?.removePrefix("/") ?: ""
+                    // 如果路径为空，加载默认首页
+                    if (path.isEmpty()) {
+                        path = "index.html"
+                    }
+                    return loadResource(path, urlScheme)
                 }
 
                 // 使用 AssetLoader 处理
@@ -488,10 +508,41 @@ class WebViewBridge(
             return super.shouldInterceptRequest(view, request)
         }
 
-        private fun loadAsset(path: String): WebResourceResponse? {
+        /**
+         * 加载资源（优先从外部目录，然后从 assets）
+         */
+        private fun loadResource(path: String, urlScheme: URLSchemeConfiguration): WebResourceResponse? {
+            val mimeType = getMimeType(path)
+            
+            // 1. 优先从外部目录加载
+            urlScheme.externalRootDirectory?.let { externalDir ->
+                val file = File(externalDir, path)
+                if (file.exists() && file.isFile) {
+                    try {
+                        val inputStream = FileInputStream(file)
+                        if (configuration.debug) {
+                            Log.d(TAG, "从外部目录加载: ${file.absolutePath}")
+                        }
+                        return WebResourceResponse(mimeType, "UTF-8", inputStream)
+                    } catch (e: Exception) {
+                        if (configuration.debug) {
+                            Log.e(TAG, "读取外部文件失败: ${file.absolutePath}", e)
+                        }
+                    }
+                }
+            }
+            
+            // 2. 从 assets 目录加载
             return try {
-                val inputStream = context.assets.open(path)
-                val mimeType = getMimeType(path)
+                val assetPath = if (urlScheme.resourcePath.isNotEmpty()) {
+                    "${urlScheme.resourcePath}/$path"
+                } else {
+                    path
+                }
+                val inputStream = context.assets.open(assetPath)
+                if (configuration.debug) {
+                    Log.d(TAG, "从 assets 加载: $assetPath")
+                }
                 WebResourceResponse(mimeType, "UTF-8", inputStream)
             } catch (e: Exception) {
                 if (configuration.debug) {
@@ -504,7 +555,7 @@ class WebViewBridge(
                     404,
                     "Not Found",
                     mapOf("Content-Type" to "text/plain"),
-                    ByteArrayInputStream("Not Found".toByteArray())
+                    ByteArrayInputStream("Not Found: $path".toByteArray())
                 )
             }
         }

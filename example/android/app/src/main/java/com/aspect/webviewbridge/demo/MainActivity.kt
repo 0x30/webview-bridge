@@ -365,18 +365,31 @@ class MainActivity : AppCompatActivity() {
     private fun loadFromExtractedFiles() {
         setupWebView()
         
+        // 配置 URL Scheme
+        val urlScheme = URLSchemeConfiguration(
+            scheme = "app",
+            host = "localhost"
+        )
+        
         val config = BridgeConfiguration(
             debug = true,
-            allowsHTTPLoading = true
+            allowsHTTPLoading = true,
+            urlScheme = urlScheme
         )
         
         setupBridge(config)
         
-        // 加载解压后的 index.html（现在直接在根目录）
-        val indexFile = File(filesDir, "web_bundle/index.html")
+        // 设置外部资源根目录（解压后的 ZIP 目录）
+        val extractedDir = File(filesDir, "web_bundle")
+        val indexFile = File(extractedDir, "index.html")
+        
         if (indexFile.exists()) {
-            webView.loadUrl("file://${indexFile.absolutePath}")
-            android.util.Log.d(TAG, "✅ 加载解压文件: ${indexFile.absolutePath}")
+            // 更新 Bridge 的外部资源目录
+            bridge?.updateExternalRootDirectory(extractedDir)
+            
+            // 使用自定义 scheme 加载
+            webView.loadUrl("app://localhost/")
+            android.util.Log.d(TAG, "✅ 使用 app:// scheme 加载: ${extractedDir.absolutePath}")
         } else {
             Toast.makeText(this, "找不到 index.html", Toast.LENGTH_SHORT).show()
             showModeSelectionDialog()
