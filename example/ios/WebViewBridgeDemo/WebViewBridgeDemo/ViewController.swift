@@ -40,6 +40,12 @@ class ViewController: UIViewController {
     
     /// UserDefaults key
     private let loadModeKey = "webview_load_mode"
+    private let firstLaunchKey = "has_launched_before"
+    
+    /// 是否首次启动
+    private var isFirstLaunch: Bool {
+        return !UserDefaults.standard.bool(forKey: firstLaunchKey)
+    }
 
     // MARK: - Lifecycle
 
@@ -55,7 +61,15 @@ class ViewController: UIViewController {
         setupWebView()
         setupBridge()
         setupLongPressGesture()
-        loadContent()
+        
+        // 首次启动显示选择对话框，否则直接加载
+        if isFirstLaunch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.showLoadModeSelector()
+            }
+        } else {
+            loadContent()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -284,12 +298,18 @@ class ViewController: UIViewController {
     private func showLoadModeSelector() {
         let alert = UIAlertController(
             title: "选择加载模式",
-            message: "当前: \(loadMode.displayName)",
+            message: "当前: \(loadMode.displayName)\n\n🌐 远程 URL - 开发调试\n📦 本地资源 - 正式发布\n⬇️ 下载 ZIP - 热更新测试",
             preferredStyle: .actionSheet
         )
         
         for mode in LoadMode.allCases {
-            let action = UIAlertAction(title: mode.displayName, style: .default) { [weak self] _ in
+            let emoji: String
+            switch mode {
+            case .remoteURL: emoji = "🌐 "
+            case .localAssets: emoji = "📦 "
+            case .downloadZip: emoji = "⬇️ "
+            }
+            let action = UIAlertAction(title: emoji + mode.displayName, style: .default) { [weak self] _ in
                 self?.switchLoadMode(to: mode)
             }
             if mode == loadMode {
@@ -298,7 +318,20 @@ class ViewController: UIViewController {
             alert.addAction(action)
         }
         
-        alert.addAction(UIAlertAction(title: "取消", style: .cancel))
+        // 快速启动按钮（使用当前配置）
+        let quickStart = UIAlertAction(title: "🚀 快速启动", style: .default) { [weak self] _ in
+            UserDefaults.standard.set(true, forKey: self?.firstLaunchKey ?? "")
+            self?.loadContent()
+        }
+        alert.addAction(quickStart)
+        
+        alert.addAction(UIAlertAction(title: "取消", style: .cancel) { [weak self] _ in
+            // 如果是首次启动且用户取消，仍然加载内容
+            if self?.isFirstLaunch == true {
+                UserDefaults.standard.set(true, forKey: self?.firstLaunchKey ?? "")
+                self?.loadContent()
+            }
+        })
         
         if let popover = alert.popoverPresentationController {
             popover.sourceView = view
@@ -312,6 +345,7 @@ class ViewController: UIViewController {
     private func switchLoadMode(to mode: LoadMode) {
         loadMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: loadModeKey)
+        UserDefaults.standard.set(true, forKey: firstLaunchKey)
         setupBridge()
         loadContent()
     }

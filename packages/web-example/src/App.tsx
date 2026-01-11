@@ -12,6 +12,8 @@ import BiometricsDemo from './components/BiometricsDemo'
 import NFCDemo from './components/NFCDemo'
 import NetworkDemo from './components/NetworkDemo'
 import CustomModuleDemo from './components/CustomModuleDemo'
+import BrowserDemoTsx from './components/BrowserDemoTsx'
+import NavigatorDemoTsx from './components/NavigatorDemoTsx'
 import './styles/index.css'
 
 export interface LogItem {
@@ -209,6 +211,14 @@ export default defineComponent({
 
             <Tab title="网络">
               <NetworkDemo onLog={addLog} />
+            </Tab>
+
+            <Tab title="浏览器">
+              <BrowserDemoTsx onLog={addLog} />
+            </Tab>
+
+            <Tab title="导航">
+              <NavigatorDemoTsx onLog={addLog} />
             </Tab>
 
             <Tab title="自定义">
