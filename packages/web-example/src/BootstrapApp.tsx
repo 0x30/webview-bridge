@@ -215,6 +215,30 @@ export default defineComponent({
         isLoading.value = false
       }
     }
+
+    /**
+     * 关闭当前页面
+     */
+    async function closeSelf() {
+      try {
+        isLoading.value = true
+        const result = await Bridge.navigator.close({
+          result: {
+            action: 'close',
+            message: `页面 ${currentPage.value?.index} 主动关闭`,
+            timestamp: Date.now()
+          }
+        })
+        if (!result.closed) {
+          Toast('关闭失败')
+        }
+      } catch (error: any) {
+        console.error('❌ 关闭失败:', error)
+        Toast.fail(error.message || '关闭失败')
+      } finally {
+        isLoading.value = false
+      }
+    }
     
     /**
      * 返回到根页面
@@ -346,7 +370,18 @@ export default defineComponent({
                 onClick={goBack}
                 disabled={!bridgeReady.value || pageIndex.value === 0}
               >
-                返回上一页
+                返回上一页 (Pop)
+              </Button>
+              
+              <Button
+                type="primary"
+                size="large"
+                block
+                loading={isLoading.value}
+                onClick={closeSelf}
+                disabled={!bridgeReady.value}
+              >
+                关闭当前页面 (Close)
               </Button>
               
               <Button

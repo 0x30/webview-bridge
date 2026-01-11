@@ -380,7 +380,18 @@ public class PageStackManager {
                 self.pageStack.remove(at: pageIndex)
 
                 // Pop 视图控制器
-                navController.popViewController(animated: animated)
+                // 如果 navController 有多个 viewControllers，可以 pop
+                if navController.viewControllers.count > 1 {
+                    navController.popViewController(animated: animated)
+                } else {
+                    // 如果是 nav 中最后一个，dismiss 它（如果是 presented）
+                    if navController.presentingViewController != nil {
+                        navController.dismiss(animated: animated, completion: nil)
+                    } else {
+                        // 直接关闭页面的 viewController
+                        page.viewController.dismiss(animated: animated, completion: nil)
+                    }
+                }
 
                 completion(.success(()))
             } else {
@@ -759,10 +770,12 @@ public class NavigatorPageViewController: UIViewController {
     }
 
     @objc private func handleBack() {
-        // 通过 Navigator.Pop 返回
-        PageStackManager.shared.pop(result: nil, delta: 1, animated: true) {
-            _ in
-        }
+        // 使用 close 方法关闭当前页面
+        PageStackManager.shared.close(
+            pageId: pageId,
+            result: nil,
+            animated: true
+        ) { _ in }
     }
 
     public override func viewWillDisappear(_ animated: Bool) {

@@ -152,6 +152,32 @@ export default defineComponent({
       }
     }
 
+    const openBootstrapWithoutNavBar = async () => {
+      try {
+        isLoading.value = true
+        const bootstrapUrl = window.location.origin + '/bootstrap.html'
+        const result = await Bridge.navigator.push({
+          url: bootstrapUrl,
+          title: '无导航栏自举',
+          navigationBarHidden: true,
+          data: {
+            source: 'NavigatorDemo',
+            hideNavBar: true,
+            canClose: true,  // 标记这个页面可以关闭自己
+            timestamp: Date.now()
+          }
+        })
+        log('success', `打开无导航栏自举页面: ${result.id}`)
+        Toast.success('已打开自举页面（无导航栏）')
+        await fetchPageInfo()
+      } catch (error: any) {
+        log('error', `打开页面失败: ${error.message}`)
+        Toast.fail(error.message || '打开页面失败')
+      } finally {
+        isLoading.value = false
+      }
+    }
+
     const goToRoot = async () => {
       try {
         isLoading.value = true
@@ -198,6 +224,15 @@ export default defineComponent({
             onClick={openBootstrapPage}
           >
             打开自举测试页面
+          </Button>
+          
+          <Button
+            type="primary"
+            block
+            loading={isLoading.value}
+            onClick={openBootstrapWithoutNavBar}
+          >
+            打开无导航栏自举页面
           </Button>
           
           <Button
