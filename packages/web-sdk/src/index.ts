@@ -24,6 +24,10 @@ import {
   NFCModule,
   NetworkModule,
   CustomModule,
+  KeyboardModule,
+  ScreenOrientationModule,
+  MotionModule,
+  BrowserModule,
 } from './modules';
 import { SystemEventName, EventDataMap } from './events';
 
@@ -103,6 +107,18 @@ class WebViewBridge {
   /** Custom 模块 - 自定义模块示例（需要 Native 端注册） */
   public readonly custom: CustomModule;
 
+  /** Keyboard 模块 - 软键盘控制 */
+  public readonly keyboard: KeyboardModule;
+
+  /** ScreenOrientation 模块 - 屏幕方向控制 */
+  public readonly screenOrientation: ScreenOrientationModule;
+
+  /** Motion 模块 - 设备运动传感器 */
+  public readonly motion: MotionModule;
+
+  /** Browser 模块 - 应用内浏览器 */
+  public readonly browser: BrowserModule;
+
   constructor(config?: BridgeConfig) {
     this.core = BridgeCore.getInstance(config);
     
@@ -122,6 +138,10 @@ class WebViewBridge {
     this.nfc = new NFCModule(this.core);
     this.network = new NetworkModule(this.core);
     this.custom = new CustomModule(this.core);
+    this.keyboard = new KeyboardModule(this.core);
+    this.screenOrientation = new ScreenOrientationModule(this.core);
+    this.motion = new MotionModule(this.core);
+    this.browser = new BrowserModule(this.core);
   }
 
   /**

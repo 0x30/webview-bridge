@@ -201,3 +201,42 @@ export {
   type ActionSheetOptions,
   type ActionSheetResult,
 } from './custom';
+
+// Keyboard 模块
+export {
+  KeyboardModule,
+  type KeyboardInfo,
+  type KeyboardEventData,
+  type KeyboardStyle,
+  type KeyboardResizeMode,
+} from './keyboard';
+
+// ScreenOrientation 模块
+export {
+  ScreenOrientationModule,
+  type OrientationType,
+  type OrientationInfo,
+} from './screenOrientation';
+
+// Motion 模块
+export {
+  MotionModule,
+  type AccelerometerData,
+  type GyroscopeData,
+  type OrientationData,
+  type MotionOptions,
+  type MotionStartResult,
+  type MotionStopResult,
+} from './motion';
+
+// Browser 模块
+export {
+  BrowserModule,
+  type PresentationStyle,
+  type BrowserOpenOptions,
+  type BrowserPrefetchOptions,
+  type BrowserOpenResult,
+  type BrowserCloseResult,
+  type BrowserPrefetchResult,
+  type BrowserEventData,
+} from './browser';

@@ -152,7 +152,7 @@ export class CustomModule implements BridgeModule {
    * @returns Alert 结果
    */
   async alert(options: AlertOptions): Promise<AlertResult> {
-    return this.bridge.send<AlertResult>('Custom.Alert', options);
+    return this.bridge.send<AlertResult>('Custom.Alert', options as unknown as Record<string, unknown>);
   }
 
   /**
@@ -161,7 +161,7 @@ export class CustomModule implements BridgeModule {
    * @returns Confirm 结果
    */
   async confirm(options: ConfirmOptions): Promise<ConfirmResult> {
-    return this.bridge.send<ConfirmResult>('Custom.Confirm', options);
+    return this.bridge.send<ConfirmResult>('Custom.Confirm', options as unknown as Record<string, unknown>);
   }
 
   /**
@@ -170,7 +170,7 @@ export class CustomModule implements BridgeModule {
    * @returns Prompt 结果
    */
   async prompt(options: PromptOptions): Promise<PromptResult> {
-    return this.bridge.send<PromptResult>('Custom.Prompt', options);
+    return this.bridge.send<PromptResult>('Custom.Prompt', options as unknown as Record<string, unknown>);
   }
 
   /**
@@ -178,7 +178,7 @@ export class CustomModule implements BridgeModule {
    * @param options Toast 选项
    */
   async toast(options: ToastOptions): Promise<void> {
-    return this.bridge.send<void>('Custom.Toast', options);
+    return this.bridge.send<void>('Custom.Toast', options as unknown as Record<string, unknown>);
   }
 
   /**
@@ -186,7 +186,7 @@ export class CustomModule implements BridgeModule {
    * @param options Loading 选项
    */
   async showLoading(options: LoadingOptions = {}): Promise<void> {
-    return this.bridge.send<void>('Custom.ShowLoading', options);
+    return this.bridge.send<void>('Custom.ShowLoading', options as unknown as Record<string, unknown>);
   }
 
   /**
@@ -202,6 +202,6 @@ export class CustomModule implements BridgeModule {
    * @returns ActionSheet 结果
    */
   async actionSheet(options: ActionSheetOptions): Promise<ActionSheetResult> {
-    return this.bridge.send<ActionSheetResult>('Custom.ActionSheet', options);
+    return this.bridge.send<ActionSheetResult>('Custom.ActionSheet', options as unknown as Record<string, unknown>);
   }
 }

@@ -12,7 +12,7 @@ import UIKit
 public class AppModule: BridgeModule {
     
     public let moduleName = "App"
-    public let methods = ["GetLaunchParams", "Exit", "GetLifecycleState", "GetAppInfo", "Minimize"]
+    public let methods = ["GetLaunchParams", "Exit", "GetLifecycleState", "GetAppInfo", "Minimize", "CanOpenURL"]
     
     private weak var bridge: WebViewBridge?
     
@@ -39,6 +39,8 @@ public class AppModule: BridgeModule {
             getAppInfo(callback: callback)
         case "Minimize":
             minimize(callback: callback)
+        case "CanOpenURL":
+            canOpenURL(params: params, callback: callback)
         default:
             callback(.failure(BridgeError.methodNotFound("\(moduleName).\(method)")))
         }
@@ -105,6 +107,20 @@ public class AppModule: BridgeModule {
     /// 最小化应用（iOS 不支持）
     private func minimize(callback: @escaping (Result<Any?, BridgeError>) -> Void) {
         callback(.failure(BridgeError(code: .capabilityNotSupported, message: "iOS 不支持最小化应用")))
+    }
+    
+    /// 检查是否可以打开 URL
+    private func canOpenURL(params: [String: AnyCodable], callback: @escaping (Result<Any?, BridgeError>) -> Void) {
+        guard let urlString = params["url"]?.value as? String,
+              let url = URL(string: urlString) else {
+            callback(.failure(BridgeError.invalidParams("url 参数无效")))
+            return
+        }
+        
+        DispatchQueue.main.async {
+            let canOpen = UIApplication.shared.canOpenURL(url)
+            callback(.success(["canOpen": canOpen]))
+        }
     }
     
     // MARK: - 辅助方法
