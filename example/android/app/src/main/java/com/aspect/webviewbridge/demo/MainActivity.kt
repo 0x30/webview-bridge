@@ -402,36 +402,6 @@ class MainActivity : AppCompatActivity() {
             view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        
-        // 添加设置按钮（长按返回键显示）
-        webView.setOnLongClickListener {
-            showSettingsMenu()
-            true
-        }
-    }
-    
-    /**
-     * 显示设置菜单
-     */
-    private fun showSettingsMenu() {
-        AlertDialog.Builder(this)
-            .setTitle("设置")
-            .setItems(arrayOf("切换加载模式", "重新加载", "清除缓存")) { _, which ->
-                when (which) {
-                    0 -> {
-                        bridge?.onDestroy()
-                        bridge = null
-                        rootContainer.removeAllViews()
-                        showModeSelectionDialog()
-                    }
-                    1 -> webView.reload()
-                    2 -> {
-                        webView.clearCache(true)
-                        Toast.makeText(this, "缓存已清除", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-            .show()
     }
     
     /**

@@ -51,23 +51,13 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // 读取保存的加载模式
-        if let savedMode = UserDefaults.standard.string(forKey: loadModeKey),
-           let mode = LoadMode(rawValue: savedMode) {
-            loadMode = mode
-        }
+
 
         setupWebView()
         setupBridge()
         
-        // 首次启动显示选择对话框，否则直接加载
-        if isFirstLaunch {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                self?.showLoadModeSelector()
-            }
-        } else {
-            loadContent()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.showLoadModeSelector()
         }
     }
 
