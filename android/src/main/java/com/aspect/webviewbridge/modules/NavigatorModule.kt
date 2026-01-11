@@ -90,6 +90,9 @@ object PageStackManager {
         val info = PageInfo(id = pageId, url = url, title = title, index = 0)
         pageStack.add(PageStackItem(info, bridge, activity))
         
+        // 设置 NavigatorModule 的 pageId
+        bridge.getModule(NavigatorModule::class.java)?.setCurrentPageId(pageId)
+        
         // 发送页面创建事件
         bridge.sendEvent("Navigator.PageCreated", info.toMap())
         
@@ -158,6 +161,9 @@ object PageStackManager {
         val pending = pendingPages.remove(pageId) ?: return
         
         pageStack.add(PageStackItem(pending.info, bridge, activity))
+        
+        // 设置 NavigatorModule 的 pageId
+        bridge.getModule(NavigatorModule::class.java)?.setCurrentPageId(pageId)
         
         // 发送页面创建事件给新页面
         bridge.sendEvent("Navigator.PageCreated", mapOf(
@@ -241,6 +247,50 @@ object PageStackManager {
     /** 移除页面 */
     fun removePage(byId: String) {
         pageStack.removeAll { it.info.id == byId }
+    }
+    
+    /** 关闭指定页面（通过ID） */
+    fun close(
+        pageId: String,
+        result: Map<String, Any?>? = null,
+        callback: (Result<Unit>) -> Unit
+    ) {
+        val pageIndex = pageStack.indexOfFirst { it.info.id == pageId }
+        
+        if (pageIndex == -1) {
+            callback(Result.failure(Exception("页面不存在")))
+            return
+        }
+        
+        val page = pageStack[pageIndex]
+        
+        // 如果是栈顶页面，直接关闭
+        if (pageIndex == pageStack.size - 1) {
+            // 通知前一个页面（如果有）
+            if (pageIndex > 0) {
+                val previousPage = pageStack[pageIndex - 1]
+                result?.let { resultData ->
+                    previousPage.bridge.sendEvent("Navigator.Result", mapOf(
+                        "from" to page.info.toMap(),
+                        "result" to resultData
+                    ))
+                }
+            }
+            
+            // 发送页面销毁事件
+            page.bridge.sendEvent("Navigator.PageDestroyed", page.info.toMap())
+            
+            // 从页面栈移除
+            pageStack.removeAt(pageIndex)
+            
+            // 关闭 Activity
+            page.activity.finish()
+            
+            callback(Result.success(Unit))
+        } else {
+            // 如果不是栈顶，暂时不支持
+            callback(Result.failure(Exception("只能关闭栈顶页面，请先关闭后续页面")))
+        }
     }
     
     /** 设置页面标题 */
@@ -499,12 +549,18 @@ class NavigatorModule(
         val result = request.getMap("result")
         val animated = request.getBool("animated") ?: true
         
-        // Close 就是 Pop 当前页面
-        PageStackManager.pop(
-            result = result,
-            delta = 1
-        ) { popResult ->
-            popResult.onSuccess {
+        // 使用当前页面的 ID 关闭自己
+        val pageId = currentPageId
+        if (pageId == null) {
+            callback.error(BridgeError.unknown("当前页面 ID 未设置"))
+            return
+        }
+        
+        PageStackManager.close(
+            pageId = pageId,
+            result = result
+        ) { closeResult ->
+            closeResult.onSuccess {
                 callback.success(mapOf("closed" to true))
             }.onFailure { error ->
                 callback.error(BridgeError.unknown(error.message ?: "Close 失败"))
