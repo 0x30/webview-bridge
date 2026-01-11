@@ -18,6 +18,7 @@ import com.aspect.webviewbridge.core.BridgeConfiguration
 import com.aspect.webviewbridge.core.URLSchemeConfiguration
 import com.aspect.webviewbridge.core.WebViewBridge
 import com.aspect.webviewbridge.demo.modules.CustomModule
+import com.aspect.webviewbridge.modules.PageStackManager
 import com.aspect.webviewbridge.modules.PermissionModule
 import kotlinx.coroutines.*
 import java.io.File
@@ -455,6 +456,18 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupBridge(config: BridgeConfiguration) {
         bridge = WebViewBridge(this, webView, config)
+        
+        // 配置 Navigator 模块的页面 Activity
+        PageStackManager.pageActivityClass = NavigatorPageActivity::class.java
+        
+        // 配置 WebView 配置器
+        PageStackManager.webViewConfigurator = { webView ->
+            webView.settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                allowFileAccess = true
+            }
+        }
         
         // 注册自定义模块
         bridge?.registerModule(CustomModule(this, bridge!!, { this }))

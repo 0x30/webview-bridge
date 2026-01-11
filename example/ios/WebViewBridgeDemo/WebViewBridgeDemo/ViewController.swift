@@ -60,7 +60,6 @@ class ViewController: UIViewController {
 
         setupWebView()
         setupBridge()
-        setupLongPressGesture()
         
         // 首次启动显示选择对话框，否则直接加载
         if isFirstLaunch {
@@ -120,6 +119,16 @@ class ViewController: UIViewController {
             )
         )
         
+        // 配置 Navigator 模块的导航控制器
+        PageStackManager.shared.rootNavigationController = self.navigationController
+        
+        // 配置 WebView 工厂
+        PageStackManager.shared.webViewConfigFactory = {
+            let config = WKWebViewConfiguration()
+            config.allowsInlineMediaPlayback = true
+            return config
+        }
+        
         // 注册自定义模块
         let customModule = CustomModule(viewController: self)
         bridge.register(module: customModule)
@@ -134,19 +143,6 @@ class ViewController: UIViewController {
         print("✅ WebViewBridge 已初始化")
     }
     
-    /// 设置长按手势
-    private func setupLongPressGesture() {
-        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress))
-        longPress.minimumPressDuration = 1.0
-        view.addGestureRecognizer(longPress)
-    }
-    
-    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-        if gesture.state == .began {
-            showLoadModeSelector()
-        }
-    }
-
     /// 加载内容
     private func loadContent() {
         switch loadMode {
