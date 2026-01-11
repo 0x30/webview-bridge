@@ -76,9 +76,9 @@ class WebViewBridge(
     private val context: Context,
     private val webView: WebView,
     private val configuration: BridgeConfiguration = BridgeConfiguration.DEFAULT,
-    private val activityProvider: () -> Activity? = { 
+    private val activityProvider: () -> Activity? = {
         // 默认：如果 context 本身就是 Activity，直接返回
-        context as? Activity 
+        context as? Activity
     }
 ) : BridgeModuleContext {
 
@@ -101,16 +101,19 @@ class WebViewBridge(
 
     init {
         Log.d(TAG, "========== WebViewBridge 初始化开始 ==========")
-        Log.d(TAG, "配置: debug=${configuration.debug}, jsInterface=${configuration.jsInterfaceName}")
-        
+        Log.d(
+            TAG,
+            "配置: debug=${configuration.debug}, jsInterface=${configuration.jsInterfaceName}"
+        )
+
         setupWebView()
         Log.d(TAG, "WebView 配置完成")
-        
+
         if (configuration.urlScheme != null) {
             setupAssetLoader()
             Log.d(TAG, "AssetLoader 配置完成")
         }
-        
+
         registerBuiltInModules()
         Log.d(TAG, "========== WebViewBridge 初始化完成，已注册 ${modules.size} 个模块 ==========")
     }
@@ -121,7 +124,7 @@ class WebViewBridge(
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         Log.d(TAG, "开始配置 WebView...")
-        
+
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -164,29 +167,34 @@ class WebViewBridge(
      */
     private fun registerBuiltInModules() {
         Log.d(TAG, "开始注册内置模块...")
-        
+
         // 使用安全注册，确保单个模块失败不影响其他模块
         safeRegisterModule { AppModule(context, this) }
-        safeRegisterModule { DeviceModule(context, this) }
-        safeRegisterModule { PermissionModule(context, this) }
-        safeRegisterModule { ClipboardModule(context, this) }
-        safeRegisterModule { HapticsModule(context, this) }
-        safeRegisterModule { StatusBarModule(context, this) }
-        safeRegisterModule { SystemModule(context, this) }
-        safeRegisterModule { StorageModule(context, this) }
         safeRegisterModule { BiometricsModule(context, this) }
+        safeRegisterModule { BrowserModule(context, this) }
+        safeRegisterModule { ClipboardModule(context, this) }
         safeRegisterModule { ContactsModule(context, this, activityProvider) }
+        safeRegisterModule { DeviceModule(context, this) }
+        safeRegisterModule { HapticsModule(context, this) }
+        safeRegisterModule { KeyboardModule(context, this, activityProvider) }
         safeRegisterModule { LocationModule(context, this) }
         safeRegisterModule { MediaModule(context, this, activityProvider) }
+        safeRegisterModule { MotionModule(context, this) }
+        safeRegisterModule { NavigatorModule(context, this) }
         safeRegisterModule { NetworkModule(context, this) }
         safeRegisterModule { NFCModule(context, this, activityProvider) }
-        
+        safeRegisterModule { PermissionModule(context, this) }
+        safeRegisterModule { ScreenOrientationModule(context, this, activityProvider) }
+        safeRegisterModule { StatusBarModule(context, this) }
+        safeRegisterModule { StorageModule(context, this) }
+        safeRegisterModule { SystemModule(context, this) }
+
         Log.d(TAG, "模块注册完成！已注册 ${modules.size} 个模块:")
         modules.keys.forEach { moduleName ->
             Log.d(TAG, "  ✓ $moduleName")
         }
     }
-    
+
     /**
      * 安全注册模块 - 捕获异常以防止单个模块失败影响整体
      */
@@ -387,7 +395,7 @@ class WebViewBridge(
     override fun getActivity(): Activity? {
         return activityProvider()
     }
-    
+
     /**
      * 获取 WebViewBridge 实例
      */

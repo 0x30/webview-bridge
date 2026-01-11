@@ -346,7 +346,14 @@ class ViewController: UIViewController {
         loadMode = mode
         UserDefaults.standard.set(mode.rawValue, forKey: loadModeKey)
         UserDefaults.standard.set(true, forKey: firstLaunchKey)
-        setupBridge()
+        
+        // 更新启动参数
+        bridge.setLaunchParams([
+            "source": "demo",
+            "version": "1.0.0",
+            "loadMode": loadMode.rawValue
+        ])
+        
         loadContent()
     }
     

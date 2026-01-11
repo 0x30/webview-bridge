@@ -76,7 +76,7 @@ class BrowserModule(
                     customTabsSession = null
                 }
             }
-            
+
             try {
                 CustomTabsClient.bindCustomTabsService(context, packageName, connection!!)
             } catch (e: Exception) {
@@ -108,7 +108,7 @@ class BrowserModule(
 
         try {
             val builder = CustomTabsIntent.Builder(customTabsSession)
-            
+
             // 设置工具栏颜色
             toolbarColor?.let { colorString ->
                 try {
@@ -118,43 +118,55 @@ class BrowserModule(
                     // 忽略无效颜色
                 }
             }
-            
+
             // 设置标题显示
             builder.setShowTitle(showTitle)
-            
+
             // 设置分享状态
             builder.setShareState(shareState)
-            
+
             // 启用 URL 栏隐藏
             builder.setUrlBarHidingEnabled(true)
-            
+
             // 动画
-            builder.setStartAnimations(context, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
-            builder.setExitAnimations(context, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+            builder.setStartAnimations(
+                context,
+                android.R.anim.slide_in_left,
+                android.R.anim.slide_out_right
+            )
+            builder.setExitAnimations(
+                context,
+                android.R.anim.slide_in_left,
+                android.R.anim.slide_out_right
+            )
 
             val customTabsIntent = builder.build()
             customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            
+
             customTabsIntent.launchUrl(context, uri)
-            
+
             bridgeContext.sendEvent("Browser.Opened", mapOf("url" to urlString))
             callback.success(mapOf("opened" to true))
-            
+
         } catch (e: Exception) {
             // 回退到普通浏览器
             try {
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 context.startActivity(intent)
-                
-                bridgeContext.sendEvent("Browser.Opened", mapOf(
-                    "url" to urlString,
-                    "fallback" to true
-                ))
-                callback.success(mapOf(
-                    "opened" to true,
-                    "fallback" to true
-                ))
+
+                bridgeContext.sendEvent(
+                    "Browser.Opened", mapOf(
+                        "url" to urlString,
+                        "fallback" to true
+                    )
+                )
+                callback.success(
+                    mapOf(
+                        "opened" to true,
+                        "fallback" to true
+                    )
+                )
             } catch (e2: Exception) {
                 callback.error(BridgeError.unknown("无法打开浏览器: ${e2.message}"))
             }
@@ -168,10 +180,12 @@ class BrowserModule(
     private fun close(callback: BridgeCallback) {
         // Chrome Custom Tabs 是独立的 Activity，无法程序化关闭
         // 只能提示用户手动关闭
-        callback.success(mapOf(
-            "closed" to false,
-            "reason" to "Custom Tabs 需要用户手动关闭"
-        ))
+        callback.success(
+            mapOf(
+                "closed" to false,
+                "reason" to "Custom Tabs 需要用户手动关闭"
+            )
+        )
     }
 
     /**
@@ -186,7 +200,12 @@ class BrowserModule(
 
         val session = customTabsSession
         if (session == null) {
-            callback.error(BridgeError(BridgeError.Code.CAPABILITY_NOT_SUPPORTED, "Custom Tabs 不可用"))
+            callback.error(
+                BridgeError(
+                    BridgeError.Code.CAPABILITY_NOT_SUPPORTED,
+                    "Custom Tabs 不可用"
+                )
+            )
             return
         }
 
@@ -201,10 +220,12 @@ class BrowserModule(
             }
         }
 
-        callback.success(mapOf(
-            "prefetched" to true,
-            "count" to count
-        ))
+        callback.success(
+            mapOf(
+                "prefetched" to true,
+                "count" to count
+            )
+        )
     }
 
     /**
