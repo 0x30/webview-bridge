@@ -255,3 +255,12 @@ export {
   type GetPagesResult,
   type NavigatorResult,
 } from './navigator';
+
+// InAppReview 模块（应用内评价）
+export {
+  InAppReviewModule,
+  type ReviewAvailability,
+  type RequestReviewResult,
+  type OpenStoreReviewParams,
+  type OpenStoreReviewResult,
+} from './inAppReview';

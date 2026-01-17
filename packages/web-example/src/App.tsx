@@ -17,6 +17,7 @@ import NavigatorDemoTsx from './components/NavigatorDemoTsx'
 import KeyboardDemoTsx from './components/KeyboardDemoTsx'
 import MotionDemoTsx from './components/MotionDemoTsx'
 import ScreenOrientationDemoTsx from './components/ScreenOrientationDemoTsx'
+import InAppReviewDemo from './components/InAppReviewDemo'
 import './styles/index.css'
 
 export interface LogItem {
@@ -234,6 +235,10 @@ export default defineComponent({
 
             <Tab title="导航">
               <NavigatorDemoTsx onLog={addLog} />
+            </Tab>
+
+            <Tab title="评价">
+              <InAppReviewDemo onLog={addLog} />
             </Tab>
 
             <Tab title="自定义">

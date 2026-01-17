@@ -29,6 +29,7 @@ import {
   MotionModule,
   BrowserModule,
   NavigatorModule,
+  InAppReviewModule,
 } from './modules';
 import { SystemEventName, EventDataMap } from './events';
 
@@ -123,6 +124,9 @@ class WebViewBridge {
   /** Navigator 模块 - 页面栈管理（类似小程序） */
   public readonly navigator: NavigatorModule;
 
+  /** InAppReview 模块 - 应用内评价 */
+  public readonly inAppReview: InAppReviewModule;
+
   constructor(config?: BridgeConfig) {
     this.core = BridgeCore.getInstance(config);
     
@@ -147,6 +151,7 @@ class WebViewBridge {
     this.motion = new MotionModule(this.core);
     this.browser = new BrowserModule(this.core);
     this.navigator = new NavigatorModule(this.core);
+    this.inAppReview = new InAppReviewModule(this.core);
   }
 
   /**

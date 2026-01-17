@@ -74,6 +74,7 @@ import { Bridge } from '@aspect/webview-bridge'
 | 模块 | 访问路径 | 描述 |
 |------|----------|------|
 | [Custom](/api/modules/custom) | `Bridge.custom` | 自定义 UI 组件（示例模块） |
+| [InAppReview](/api/modules/in-app-review) | `Bridge.inAppReview` | 应用内评价 |
 
 ## 类型定义
 

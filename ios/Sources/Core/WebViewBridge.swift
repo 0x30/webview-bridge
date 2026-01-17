@@ -220,6 +220,7 @@ public class WebViewBridge: NSObject {
         register(module: ContactsModule(bridge: self))
         register(module: DeviceModule(bridge: self))
         register(module: HapticsModule(bridge: self))
+        register(module: InAppReviewModule(bridge: self))
         register(module: KeyboardModule(bridge: self))
         register(module: LocationModule(bridge: self))
         register(module: MediaModule(bridge: self))

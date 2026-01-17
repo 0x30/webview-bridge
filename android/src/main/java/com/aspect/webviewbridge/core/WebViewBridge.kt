@@ -192,6 +192,7 @@ class WebViewBridge(
         safeRegisterModule { ContactsModule(context, this, activityProvider) }
         safeRegisterModule { DeviceModule(context, this) }
         safeRegisterModule { HapticsModule(context, this) }
+        safeRegisterModule { InAppReviewModule(context, this) }
         safeRegisterModule { KeyboardModule(context, this, activityProvider) }
         safeRegisterModule { LocationModule(context, this) }
         safeRegisterModule { MediaModule(context, this, activityProvider) }
